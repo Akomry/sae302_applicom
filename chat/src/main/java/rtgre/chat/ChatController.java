@@ -67,7 +67,6 @@ public class ChatController implements Initializable {
         while (true) {
             try {
                 String datetime = "%1$ta %1$te %1$tb %1$tY - %1$tH:%1$tM".formatted(new Date());
-                // System.out.println(datetime);
                 Platform.runLater(() -> dateTimeLabel.setText(datetime));
                 Thread.sleep(60000);
             } catch (Exception e) {
