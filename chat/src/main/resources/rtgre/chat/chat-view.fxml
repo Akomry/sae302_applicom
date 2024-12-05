@@ -114,7 +114,7 @@
       <HBox>
          <children>
             <Label text="Status : " />
-            <Label fx:id="statusLabel" text="Not connected" />
+            <Label fx:id="statusLabel" text="Not connected"/>
             <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
             <Label fx:id="dateTimeLabel" text="Today" />
          </children>

@@ -31,7 +31,7 @@ public class ChatApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource("chat-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 320, 240);
+        Scene scene = new Scene(fxmlLoader.load(), 600, 400);
         stage.setTitle("Chat @BOUCLY_Emi (B2GA)");
 
         stage.getIcons().add(new Image(Objects.requireNonNull(ChatApplication.class.getResourceAsStream("rt.png"))));
