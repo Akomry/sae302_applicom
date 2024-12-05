@@ -13,6 +13,8 @@ public class ChatApplication extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource("chat-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 320, 240);
         stage.setTitle("Chat @BOUCLY_Emi (B2GA)");
+        stage.setMinWidth(800);
+        stage.setMinHeight(500);
         stage.setScene(scene);
         stage.show();
     }
