@@ -1,11 +1,16 @@
 package rtgre.chat;
 
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 
-public class ChatController {
+import java.net.URL;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
+import static rtgre.chat.ChatApplication.LOGGER;
+public class ChatController implements Initializable {
 
     public MenuItem hostAddMenuItem;
     public MenuItem avatarMenuItem;
@@ -20,4 +25,8 @@ public class ChatController {
     public ListView contactListView;
 
 
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        LOGGER.info("Initialisation de l'interface graphique");
+    }
 }
