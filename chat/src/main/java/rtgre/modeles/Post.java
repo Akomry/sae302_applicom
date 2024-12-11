@@ -29,8 +29,32 @@ public class Post extends Message {
     public Post(String from, String to, String body) {
         super(to, body);
         this.from = from;
-        this.id = UUID.randomUUID();
+        this.to = to;
+        this.body = body;
         this.timestamp = new Date().getTime();
+        this.id = UUID.randomUUID();
+    }
+
+    public Post(String from, Message message) {
+        super(message.to, message.body);
+        this.from = from;
+        this.to = message.to;
+        this.body = message.body;
+        this.timestamp = new Date().getTime();
+        this.id = UUID.randomUUID();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Post post = (Post) o;
+        return id.equals(post.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 
     public UUID getId() {
@@ -50,24 +74,30 @@ public class Post extends Message {
         return "Post{" +
                 "id=" + id +
                 ", timestamp=" + timestamp +
-                ", from=" + from +
-                ", to=" + to +
-                ", body=" + body +
+                ", from='" + from + '\'' +
+                ", to='" + to + '\'' +
+                ", body='" + body + '\'' +
                 '}';
     }
 
     @Override
-    public String toJson() {
-        JSONObject json = toJsonObject()
+    public JSONObject toJsonObject() {
+        return new JSONObject()
                 .put("id", this.id)
                 .put("timestamp", this.timestamp)
-                .put("from", this.from);
-        return json.toString();
+                .put("from", this.from)
+                .put("to", this.to)
+                .put("body", this.body);
+    }
+
+    @Override
+    public String toJson() {
+        return toJsonObject().toString();
     }
 
     public static Post fromJson(JSONObject jsonObject) {
         return new Post(
-                (UUID) jsonObject.get("id"),
+                UUID.fromString(jsonObject.getString("id")),
                 jsonObject.getLong("timestamp"),
                 jsonObject.getString("from"),
                 jsonObject.getString("to"),
