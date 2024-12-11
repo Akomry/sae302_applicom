@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
+import static rtgre.chat.ChatApplication.LOGGER;
+
 public class Contact {
     protected String login;
     protected java.awt.Image avatar;
@@ -52,9 +54,9 @@ public class Contact {
         try {
             this.avatar = avatarFromLogin(banques_avatars, login);
         } catch (IOException e) {
-            System.out.println("Impossible de créer l'utilisateur " + login);
-            System.out.println(e.getMessage());
-            System.out.println(banques_avatars);
+            LOGGER.severe("Impossible de créer l'utilisateur " + login);
+            LOGGER.severe(e.getMessage());
+            LOGGER.severe(banques_avatars.getAbsolutePath());
         }
         this.connected = connected;
         this.currentRoom = null;
