@@ -37,7 +37,9 @@ public class Message {
         /**
          * Transforme le message courant en objet JSON
          */
-        return new JSONObject("{to:%s,body:%s}".formatted( this.to, this.body));
+        return new JSONObject()
+                .put("to", this.to)
+                .put("body", this.body);
     }
 
     public String toJson() {
