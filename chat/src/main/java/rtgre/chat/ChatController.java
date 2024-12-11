@@ -26,6 +26,7 @@ import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.modeles.Contact;
 import rtgre.modeles.ContactMap;
 import rtgre.modeles.Message;
+import rtgre.modeles.Post;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -62,6 +63,7 @@ public class ChatController implements Initializable {
     public Contact contact;
     private ContactMap contactMap = new ContactMap();
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
+    private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
     Validator validatorLogin = new Validator();
 
 
@@ -93,6 +95,9 @@ public class ChatController implements Initializable {
         sendButton.setOnAction(this::onActionSend);
 
         initContactListView();
+        initPostListView();
+        contactsListView.getSelectionModel().selectedItemProperty().addListener(
+                (observableValue, previous, selected) -> handleContactSelection((Contact) selected));
 
         validatorLogin.createCheck()
                 .dependsOn("login", loginTextField.textProperty())
@@ -135,9 +140,6 @@ public class ChatController implements Initializable {
 
 
     private void handleConnection(Observable observable) {
-        /**
-         *
-         */
         if (connectionButton.isSelected()) {
             java.awt.Image img = SwingFXUtils.fromFXImage(this.avatarImageView.getImage(), null);
             this.contact = new Contact(loginTextField.getText(), img);
@@ -192,6 +194,14 @@ public class ChatController implements Initializable {
             LOGGER.severe(e.getMessage());
         }
     }
+    private void initPostListView() {
+        try {
+            postListView.setItems(postsObservableList);
+        } catch (Exception e) {
+            LOGGER.severe(e.getMessage());
+        }
+    }
+
 
     public String getSelectedContactLogin() {
         Contact contact;
@@ -204,5 +214,14 @@ public class ChatController implements Initializable {
         }
         LOGGER.info("Selected login: " + login);
         return login;
+    }
+
+    void handleContactSelection(Contact contactSelected) {
+        if (contactSelected != null) {
+            LOGGER.info("Clic sur " + contactSelected);
+        }
+        Post postSys = new Post("system", contactSelected.getLogin(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        postsObservableList.add(postSys);
+
     }
 }
