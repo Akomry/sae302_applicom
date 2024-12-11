@@ -23,6 +23,7 @@ import net.synedra.validatorfx.Check;
 import net.synedra.validatorfx.TooltipWrapper;
 import net.synedra.validatorfx.Validator;
 import rtgre.chat.graphisme.ContactListViewCell;
+import rtgre.chat.graphisme.PostListViewCell;
 import rtgre.modeles.Contact;
 import rtgre.modeles.ContactMap;
 import rtgre.modeles.Message;
@@ -196,6 +197,7 @@ public class ChatController implements Initializable {
     }
     private void initPostListView() {
         try {
+            postListView.setCellFactory(postListView -> new PostListViewCell(this));
             postListView.setItems(postsObservableList);
         } catch (Exception e) {
             LOGGER.severe(e.getMessage());
@@ -216,12 +218,20 @@ public class ChatController implements Initializable {
         return login;
     }
 
+    public Contact getContact() {
+        return contact;
+    }
+
+    public ContactMap getContactsMap() {
+        return contactMap;
+    }
+
     void handleContactSelection(Contact contactSelected) {
         if (contactSelected != null) {
             LOGGER.info("Clic sur " + contactSelected);
         }
         Post postSys = new Post("system", contactSelected.getLogin(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
         postsObservableList.add(postSys);
-
+        postListView.refresh();
     }
 }
