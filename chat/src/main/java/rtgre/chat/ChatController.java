@@ -194,10 +194,12 @@ public class ChatController implements Initializable {
     }
 
     public String getSelectedContactLogin() {
+        Contact contact;
         String login;
         try {
-            login = contactsListView.getSelectionModel().getSelectedItem().toString();
-        } catch (java.lang.NullPointerException e) {
+            contact = (Contact) contactsListView.getSelectionModel().getSelectedItem();
+            login = contact.getLogin();
+        } catch (Exception e) {
             login = null;
         }
         LOGGER.info("Selected login: " + login);
