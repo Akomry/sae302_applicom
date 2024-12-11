@@ -25,6 +25,7 @@ import net.synedra.validatorfx.Validator;
 import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.modeles.Contact;
 import rtgre.modeles.ContactMap;
+import rtgre.modeles.Message;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -89,6 +90,7 @@ public class ChatController implements Initializable {
 
         avatarMenuItem.setOnAction(this::handleAvatarChange);
         avatarImageView.setOnMouseClicked(this::handleAvatarChange);
+        sendButton.setOnAction(this::onActionSend);
 
         initContactListView();
 
@@ -103,6 +105,15 @@ public class ChatController implements Initializable {
         /* -------------------------------------- */
         loginTextField.setText("riri");
         connectionButton.setSelected(true);
+        /* -------------------------------------- */
+    }
+
+    private void onActionSend(ActionEvent actionEvent) {
+        String login = getSelectedContactLogin();
+        if (login != null) {
+            Message message = new Message(login, messageTextField.getText());
+            LOGGER.info(message.toString());
+        }
     }
 
     private void handleAvatarChange(Event event) {
@@ -131,8 +142,8 @@ public class ChatController implements Initializable {
             java.awt.Image img = SwingFXUtils.fromFXImage(this.avatarImageView.getImage(), null);
             this.contact = new Contact(loginTextField.getText(), img);
             contactMap.put(this.contact.getLogin(), this.contact);
-            System.out.println("Nouveau contact : " + contact);
-            System.out.println(contactMap);
+            LOGGER.info("Nouveau contact : " + contact);
+            LOGGER.info(contactMap.toString());
         }
     }
 
@@ -160,7 +171,7 @@ public class ChatController implements Initializable {
                 Platform.runLater(() -> dateTimeLabel.setText(datetime));
                 Thread.sleep(60000);
             } catch (Exception e) {
-                System.out.println(e);
+                LOGGER.severe(e.getMessage());
             }
         }
 
@@ -180,5 +191,16 @@ public class ChatController implements Initializable {
         } catch (Exception e) {
             LOGGER.severe(e.getMessage());
         }
+    }
+
+    public String getSelectedContactLogin() {
+        String login;
+        try {
+            login = contactsListView.getSelectionModel().getSelectedItem().toString();
+        } catch (java.lang.NullPointerException e) {
+            login = null;
+        }
+        LOGGER.info("Selected login: " + login);
+        return login;
     }
 }
