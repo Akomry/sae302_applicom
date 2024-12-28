@@ -1,5 +1,10 @@
 package rtgre.server;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import rtgre.modeles.ContactMap;
+import rtgre.modeles.Event;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,6 +22,7 @@ public class ChatServer {
     private static final Logger LOGGER = Logger.getLogger(ChatServer.class.getCanonicalName());
 
     private Vector<ChatClientHandler> clientList;
+    private ContactMap contactMap;
 
     static {
         try {
@@ -43,6 +49,8 @@ public class ChatServer {
         passiveSock = new ServerSocket(port);
         LOGGER.info("Serveur en écoute " + passiveSock);
         clientList = new Vector<>();
+        contactMap = new ContactMap();
+        contactMap.loadDefaultContacts();
     }
 
     public void close() throws IOException {
@@ -99,6 +107,10 @@ public class ChatServer {
         LOGGER.fine("Ajout du client [%s] dans la liste (%d clients connectés)"
                 .formatted(client.getIpPort(), clientList.size()));
         //client.echoLoop();
+    }
+
+    public ContactMap getContactMap() {
+        return contactMap;
     }
 
     private class ChatClientHandler {
@@ -158,6 +170,52 @@ public class ChatServer {
                 LOGGER.severe("[%s] %s".formatted(ipPort, e));
             }
             close();
+        }
+
+        public void eventReceiveLoop() {
+            try {
+                String message = null;
+                while (!END_MESSAGE.equals(message)) {
+                    message = in.readLine();
+                    if (message == null) {
+                        break;
+                    }
+                    LOGGER.info("[%s] Réception de : %s".formatted(ipPort, message));
+                    LOGGER.info("[%s] Envoi de : %s".formatted(ipPort, message));
+                    try {
+                        if (handleEvent(message)) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.severe("[%s] %s".formatted(ipPort, e));
+            }
+            close();
+        }
+
+        private boolean handleEvent(String message) throws JSONException, IllegalStateException {
+            Event event = Event.fromJson(message);
+            switch (event.getType()) {
+                case Event.AUTH:
+                    doLogin(event.getContent());
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
+        private void doLogin(JSONObject content) {
+            String login = content.getString("login");
+            if (login.equals("")) {
+                throw new JSONException("Aucun login fourni");
+            } else if (!contactMap.containsKey(login)) {
+                throw new IllegalStateException("Login non-authorisé");
+            } else {
+                contactMap.getContact(login).setConnected(true);
+            }
         }
 
         public void send(String message) throws IOException {
