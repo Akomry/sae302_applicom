@@ -24,10 +24,8 @@ import net.synedra.validatorfx.TooltipWrapper;
 import net.synedra.validatorfx.Validator;
 import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.chat.graphisme.PostListViewCell;
-import rtgre.modeles.Contact;
-import rtgre.modeles.ContactMap;
-import rtgre.modeles.Message;
-import rtgre.modeles.Post;
+import rtgre.chat.net.ChatClient;
+import rtgre.modeles.*;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -38,6 +36,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static rtgre.chat.ChatApplication.LOGGER;
@@ -46,10 +45,11 @@ public class ChatController implements Initializable {
 
     private static final Pattern LOGIN_PATTERN = Pattern.compile("^([a-z][a-z0-9]{2,7})$");
     private static final Pattern HOST_PATTERN = Pattern.compile("/^[a-z]*((\\:?)\\d{1,5})?$/gm");
+    private final Pattern hostPortPattern = Pattern.compile("^([-.a-zA-Z0-9]+)(?::([0-9]{1,5}))?$");
     public MenuItem hostAddMenuItem;
     public MenuItem avatarMenuItem;
     public MenuItem aboutMenuItem;
-    public ComboBox hostComboBox;
+    public ComboBox<String> hostComboBox;
     public TextField loginTextField;
     public ToggleButton connectionButton;
     public ImageView avatarImageView;
@@ -66,6 +66,8 @@ public class ChatController implements Initializable {
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
     private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
     Validator validatorLogin = new Validator();
+    private ChatClient client = null;
+    private PostVector postVector;
 
 
     @Override
@@ -147,7 +149,38 @@ public class ChatController implements Initializable {
             contactMap.put(this.contact.getLogin(), this.contact);
             LOGGER.info("Nouveau contact : " + contact);
             LOGGER.info(contactMap.toString());
+            Matcher matcher = hostPortPattern.matcher("localhost:2024");
+            matcher.matches();
+            String host = matcher.group(1);
+            int port = (matcher.group(2) != null) ? Integer.parseInt(matcher.group(2)) : 2024;
+            try {
+                this.client = new ChatClient(host, port, this);
+                initContactListView();
+                initPostListView();
+                clearLists();
+                contactMap.add(this.contact);
+                this.contact.setConnected(true);
+                initContactListView();
+                initPostListView();
+                this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
+            } catch (IOException e) {
+                new Alert(Alert.AlertType.ERROR, "Erreur de connexion").showAndWait();
+                connectionButton.setSelected(false);
+            }
+        } else if (!connectionButton.isSelected()) {
+            clearLists();
+            this.client.close();
+            this.contact.setConnected(false);
+            statusLabel.setText("not connected to " + hostComboBox.getValue());
         }
+
+    }
+
+    private void clearLists() {
+        this.contactMap = new ContactMap();
+        this.postVector = new PostVector();
+        contactObservableList.clear();
+        postsObservableList.clear();
     }
 
     private void checkLogin(Check.Context context) {
@@ -185,10 +218,7 @@ public class ChatController implements Initializable {
             contactsListView.setCellFactory(contactListView -> new ContactListViewCell());
             contactsListView.setItems(contactObservableList);
             File avatars = new File(getClass().getResource("avatars.png").toURI());
-            Contact riri = new Contact("riri", false, avatars);
             Contact fifi = new Contact("fifi", true, avatars);
-            contactObservableList.add(riri);
-            contactMap.add(riri);
             contactObservableList.add(fifi);
             contactMap.add(fifi);
         } catch (Exception e) {
