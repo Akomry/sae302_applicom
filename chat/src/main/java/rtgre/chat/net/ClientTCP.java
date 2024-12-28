@@ -1,5 +1,7 @@
 package rtgre.chat.net;
 
+import rtgre.chat.ChatController;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -19,15 +21,16 @@ public class ClientTCP {
     public static final String RST = "\u001b[0m";
     public static final String END_MESSAGE = "fin";
 
+    /*
     static {
         try {
             InputStream is = ClientTCP.class.getClassLoader()
-                    .getResource("logging.properties").openStream();
+                    .getResource("rtgre/chat/logging.properties").openStream();
             LogManager.getLogManager().readConfiguration(is);
         } catch (Exception e) {
             LOGGER.log(Level.INFO, "Cannot read configuration file", e);
         }
-    }
+    }*/
 
     public static void main(String[] args) throws Exception {
         /*
@@ -94,6 +97,9 @@ public class ClientTCP {
         LOGGER.fine("[%s] Conversion flux d'octets en flux de caractères UTF-8".formatted(ipPort));
         out = new PrintStream(os, true, StandardCharsets.UTF_8);
         in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8), 2048);
+        Thread rcLoop = new Thread(this::receiveLoop);
+        rcLoop.setDaemon(true);
+        rcLoop.start();
     }
 
     /**
