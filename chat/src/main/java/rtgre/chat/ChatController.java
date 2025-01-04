@@ -163,6 +163,7 @@ public class ChatController implements Initializable {
                 initContactListView();
                 initPostListView();
                 this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
+                client.sendAuthEvent(contact);
             } catch (IOException e) {
                 new Alert(Alert.AlertType.ERROR, "Erreur de connexion").showAndWait();
                 connectionButton.setSelected(false);

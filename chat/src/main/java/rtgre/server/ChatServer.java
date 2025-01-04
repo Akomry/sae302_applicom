@@ -2,6 +2,7 @@ package rtgre.server;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import rtgre.modeles.Contact;
 import rtgre.modeles.ContactMap;
 import rtgre.modeles.Event;
 
@@ -101,7 +102,7 @@ public class ChatServer {
      */
     private void handleNewClient(Socket sock) throws IOException {
         ChatClientHandler client = new ChatClientHandler(sock);
-        Thread clientLoop = new Thread(client::echoLoop);
+        Thread clientLoop = new Thread(client::eventReceiveLoop);
         clientLoop.start();
         clientList.add(client);
         LOGGER.fine("Ajout du client [%s] dans la liste (%d clients connectés)"
@@ -181,9 +182,8 @@ public class ChatServer {
                         break;
                     }
                     LOGGER.info("[%s] Réception de : %s".formatted(ipPort, message));
-                    LOGGER.info("[%s] Envoi de : %s".formatted(ipPort, message));
                     try {
-                        if (handleEvent(message)) {
+                        if (!handleEvent(message)) {
                             break;
                         }
                     } catch (Exception e) {
@@ -201,21 +201,31 @@ public class ChatServer {
             switch (event.getType()) {
                 case Event.AUTH:
                     doLogin(event.getContent());
-                    return false;
-                default:
+                    LOGGER.finest("Login successful");
                     return true;
+                default:
+                    LOGGER.warning("Unhandled event type: " + event.getType());
+                    return false;
             }
         }
 
         private void doLogin(JSONObject content) {
             String login = content.getString("login");
-            if (login.equals("")) {
+            if (login.isEmpty()) {
+                LOGGER.warning("Aucun login fourni");
                 throw new JSONException("Aucun login fourni");
             } else if (!contactMap.containsKey(login)) {
+                LOGGER.warning("Login non-authorisé");
                 throw new IllegalStateException("Login non-authorisé");
             } else {
+                LOGGER.info("Connexion de " + login);
                 contactMap.getContact(login).setConnected(true);
             }
+        }
+
+        public ChatClientHandler findClient(Contact contact) {
+            String login = contact.getLogin();
+            Contact contactRes = contactMap.get()
         }
 
         public void send(String message) throws IOException {
@@ -247,7 +257,7 @@ public class ChatServer {
 
         public String receive() throws IOException {
             String message = in.readLine();
-            LOGGER.finest("receive: %s".formatted(message));
+            LOGGER.info("receive: %s".formatted(message));
             if (message == null) {
                 throw new IOException("End of the stream has been reached");
             }
