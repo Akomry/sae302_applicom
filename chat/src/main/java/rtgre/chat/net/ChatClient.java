@@ -58,6 +58,16 @@ public class ChatClient extends ClientTCP {
         sendEvent(authEvent);
     }
 
+    public void sendListPostEvent(long since, String select) {
+        Event listPostEvent = new Event(
+                Event.LIST_POSTS,
+                new JSONObject()
+                        .put("since", since)
+                        .put("select", select)
+        );
+        sendEvent(listPostEvent);
+    }
+
 
     @Override
     public void receiveLoop() {

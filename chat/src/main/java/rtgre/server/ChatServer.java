@@ -250,27 +250,48 @@ public class ChatServer {
                 doMessage(event.getContent());
                 LOGGER.info("Receiving message");
                 return true;
+            } else if (event.getType().equals(Event.LIST_POSTS)) {
+                doListPost(event.getContent());
+                LOGGER.info("Sending Posts");
+                return true;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
             }
         }
 
+        private void doListPost(JSONObject content) throws JSONException, IllegalStateException {
+
+            if (contactMap.getContact(user.getLogin()).isConnected()) {
+                if (!contactMap.containsKey(content.getString("select"))) {
+                    throw new IllegalStateException();
+                }
+                for (Post post: postVector.getPostsSince(content.getLong("since"))) {
+                    if (post.getTo().equals(content.getString("select")) ||
+                        post.getFrom().equals(content.getString("select"))) {
+                        sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
+                    }
+                }
+            }
+        }
+
         private void doMessage(JSONObject content) throws JSONException, IllegalStateException {
-            if (content.getString("to").equals(user.getLogin()) || !contactMap.containsKey(content.getString("to"))) {
-                throw new IllegalStateException();
-            } else {
-                Post post = new Post(
-                        user.getLogin(),
-                        Message.fromJson(content)
-                );
-                Event postEvent = new Event("POST", post.toJsonObject());
+            if (contactMap.getContact(user.getLogin()).isConnected()) {
+                if (content.getString("to").equals(user.getLogin()) || !contactMap.containsKey(content.getString("to"))) {
+                    throw new IllegalStateException();
+                } else {
+                    Post post = new Post(
+                            user.getLogin(),
+                            Message.fromJson(content)
+                    );
+                    Event postEvent = new Event("POST", post.toJsonObject());
 
-                sendEventToContact(contactMap.getContact(post.getFrom()), postEvent);
-                sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
+                    sendEventToContact(contactMap.getContact(post.getFrom()), postEvent);
+                    sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
 
-                postVector.add(post);
-                LOGGER.info("Fin de doMessage");
+                    postVector.add(post);
+                    LOGGER.info("Fin de doMessage");
+                }
             }
         }
 

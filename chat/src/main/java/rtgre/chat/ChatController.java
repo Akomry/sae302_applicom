@@ -278,6 +278,7 @@ public class ChatController implements Initializable {
         Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
         postsObservableList.clear();
         postsObservableList.add(postSys);
+        client.sendListPostEvent(0, contactSelected.getLogin());
         postListView.refresh();
     }
 
