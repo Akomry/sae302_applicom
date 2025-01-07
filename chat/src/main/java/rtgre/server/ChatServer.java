@@ -2,6 +2,7 @@ package rtgre.server;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import rtgre.chat.net.ChatClient;
 import rtgre.modeles.Contact;
 import rtgre.modeles.ContactMap;
 import rtgre.modeles.Event;
@@ -38,6 +39,7 @@ public class ChatServer {
 
     public static void main(String[] args) throws IOException {
         ChatServer server = new ChatServer(2024);
+        daisyConnect();
         server.acceptClients();
     }
 
@@ -123,7 +125,7 @@ public class ChatServer {
         ChatClientHandler user = findClient(contact);
         if (!(user == null)) {
             try {
-                user.send(event.toString());
+                user.send(event.toJson());
             } catch (Exception e) {
                 LOGGER.warning("!!Erreur de l'envoi d'Event à %s, fermeture de la connexion".formatted(user.user.getLogin()));
                 user.close();
@@ -141,6 +143,12 @@ public class ChatServer {
 
     public ContactMap getContactMap() {
         return contactMap;
+    }
+
+    /** Temporaire : connecte daisy pour test */
+    public static void daisyConnect() throws IOException {
+        ChatClient client = new ChatClient("localhost", 2024, null);
+        client.sendAuthEvent(new Contact("daisy", null));
     }
 
     private class ChatClientHandler {
@@ -229,14 +237,42 @@ public class ChatServer {
 
         private boolean handleEvent(String message) throws JSONException, IllegalStateException {
             Event event = Event.fromJson(message);
-            switch (event.getType()) {
-                case Event.AUTH:
-                    doLogin(event.getContent());
-                    LOGGER.finest("Login successful");
-                    return true;
-                default:
-                    LOGGER.warning("Unhandled event type: " + event.getType());
-                    return false;
+//            switch (event.getType()) {
+//                case Event.AUTH:
+//                    doLogin(event.getContent());
+//                    LOGGER.finest("Login successful");
+//                    return true;
+//                case Event.LIST_CONTACTS:
+//                    doListContact(event.getContent());
+//                    LOGGER.finest("Sending contacts");
+//                default:
+//                    LOGGER.warning("Unhandled event type: " + event.getType());
+//                    return false;
+//            }
+            if (event.getType().equals(Event.AUTH)) {
+                doLogin(event.getContent());
+                LOGGER.finest("Login successful");
+                return true;
+            } else if (event.getType().equals(Event.LIST_CONTACTS)) {
+                doListContact(event.getContent());
+                LOGGER.finest("Sending contacts");
+            } else {
+                LOGGER.warning("Unhandled event type: " + event.getType());
+                return false;
+
+            }
+            return false;
+        }
+
+        private void doListContact(JSONObject content) throws JSONException, IllegalStateException {
+            for (Contact contact: contactMap.values()) {
+                if (contactMap.getContact(user.getLogin()).isConnected()) {
+                    try {
+                        send(new Event(Event.CONT, contact.toJsonObject()).toJson());
+                    } catch (IOException e) {
+                        throw new IllegalStateException();
+                    }
+                }
             }
         }
 
@@ -252,6 +288,10 @@ public class ChatServer {
                 LOGGER.info("Connexion de " + login);
                 contactMap.getContact(login).setConnected(true);
                 this.user = contactMap.getContact(login);
+                sendAllOtherClients(
+                        findClient(contactMap.getContact(login)),
+                        new Event("CONT", user.toJsonObject()).toJson()
+                );
             }
         }
 

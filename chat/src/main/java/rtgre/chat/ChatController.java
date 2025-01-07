@@ -22,11 +22,13 @@ import javafx.stage.Stage;
 import net.synedra.validatorfx.Check;
 import net.synedra.validatorfx.TooltipWrapper;
 import net.synedra.validatorfx.Validator;
+import org.json.JSONObject;
 import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.chat.graphisme.PostListViewCell;
 import rtgre.chat.net.ChatClient;
 import rtgre.modeles.*;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -154,24 +156,30 @@ public class ChatController implements Initializable {
             String host = matcher.group(1);
             int port = (matcher.group(2) != null) ? Integer.parseInt(matcher.group(2)) : 2024;
             try {
+                LOGGER.info(host + ":" + port);
                 this.client = new ChatClient(host, port, this);
                 initContactListView();
                 initPostListView();
                 clearLists();
                 contactMap.add(this.contact);
                 this.contact.setConnected(true);
+
+                client.sendAuthEvent(contact);
+                client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.LIST_CONTACTS, new JSONObject()));
+
                 initContactListView();
                 initPostListView();
                 this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
-                client.sendAuthEvent(contact);
             } catch (IOException e) {
                 new Alert(Alert.AlertType.ERROR, "Erreur de connexion").showAndWait();
                 connectionButton.setSelected(false);
             }
         } else if (!connectionButton.isSelected()) {
             clearLists();
-            this.client.close();
-            this.contact.setConnected(false);
+            if (this.client.isConnected()) {
+                this.client.close();
+                this.contact.setConnected(false);
+            }
             statusLabel.setText("not connected to " + hostComboBox.getValue());
         }
 
@@ -265,4 +273,44 @@ public class ChatController implements Initializable {
         postsObservableList.add(postSys);
         postListView.refresh();
     }
+
+    public void handleEvent(rtgre.modeles.Event event) {
+        LOGGER.info("Received new event! : " + event);
+        LOGGER.info(event.getType());
+
+//        switch (event.getType()) {
+//            case "CONT":
+//                handleContEvent(event.getContent());
+//            default:
+//                LOGGER.warning("Unhandled event type: " + event.getType());
+//                this.client.close();
+//        }
+
+        if (event.getType().equals("CONT")) {
+            handleContEvent(event.getContent());
+        } else {
+            LOGGER.warning("Unhandled event type: " + event.getType());
+            this.client.close();
+        }
+    }
+
+    private void handleContEvent(JSONObject content) {
+        Contact contact = contactMap.getContact(content.getString("login"));
+        if (contact != null) {
+            LOGGER.info(contactMap.toString());
+            contactMap.getContact(content.getString("login")).setConnected(content.getBoolean("connected"));
+            contactsListView.refresh();
+            LOGGER.info(contactMap.toString());
+        } else {
+            LOGGER.info(contactMap.toString());
+            Contact user = Contact.fromJSON(
+                    content,
+                    new File("src/main/resources/rtgre/chat/avatars.png")
+            );
+            contactMap.add(user);
+            contactObservableList.add(user);
+            LOGGER.info(contactMap.toString());
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
 package rtgre.chat.net;
 
+import javafx.application.Platform;
 import org.json.JSONObject;
 import rtgre.chat.ChatController;
 import rtgre.modeles.Contact;
@@ -65,6 +66,9 @@ public class ChatClient extends ClientTCP {
                 String message = this.receive();
                 LOGGER.info(RED + "Réception: " + message + RST);
                 LOGGER.info(RED + message + RST);
+                if (listener != null) {
+                    Platform.runLater(() -> listener.handleEvent(Event.fromJson(message)));
+                }
             }
         } catch (IOException e) {
             LOGGER.severe("[%s] %s".formatted(ipPort, e));
