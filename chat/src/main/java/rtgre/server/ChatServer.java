@@ -110,6 +110,35 @@ public class ChatServer {
         //client.echoLoop();
     }
 
+    public ChatClientHandler findClient(Contact contact) {
+        for (ChatClientHandler user: clientList) {
+            if (user.user.equals(contact)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public void sendEventToContact(Contact contact, Event event) {
+        ChatClientHandler user = findClient(contact);
+        if (!(user == null)) {
+            try {
+                user.send(event.toString());
+            } catch (Exception e) {
+                LOGGER.warning("!!Erreur de l'envoi d'Event à %s, fermeture de la connexion".formatted(user.user.getLogin()));
+                user.close();
+            }
+        }
+    }
+
+    public void sendEventToAllContacts(Event event) {
+        for (Contact contact: contactMap.values()) {
+            if (contact.isConnected()) {
+                sendEventToContact(contact, event);
+            }
+        }
+    }
+
     public ContactMap getContactMap() {
         return contactMap;
     }
@@ -132,6 +161,8 @@ public class ChatServer {
          * Chaine de caractères "ip:port" du client
          */
         private String ipPort;
+
+        private Contact user;
 
         /**
          * Initialise les attributs {@link #sock} (socket connecté au client),
@@ -220,12 +251,8 @@ public class ChatServer {
             } else {
                 LOGGER.info("Connexion de " + login);
                 contactMap.getContact(login).setConnected(true);
+                this.user = contactMap.getContact(login);
             }
-        }
-
-        public ChatClientHandler findClient(Contact contact) {
-            String login = contact.getLogin();
-            Contact contactRes = contactMap.get()
         }
 
         public void send(String message) throws IOException {

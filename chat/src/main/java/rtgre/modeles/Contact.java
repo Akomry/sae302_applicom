@@ -1,6 +1,8 @@
 package rtgre.modeles;
 
 
+import org.json.JSONObject;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -99,6 +101,20 @@ public class Contact {
 
     public int getUnreadCount() {
         return 0;
+    }
+
+    public JSONObject toJsonObject() {
+        return new JSONObject()
+                .put("login", this.login)
+                .put("connected", this.connected);
+    }
+
+    public String toJson() {
+        return toJsonObject().toString();
+    }
+
+    public static Contact fromJSON(JSONObject jsonObject, File banque_avatars) {
+        return new Contact(jsonObject.getString("login"), jsonObject.getBoolean("connected"), banque_avatars);
     }
 
     public static BufferedImage avatarFromLogin(File fichier, String login) throws IOException {
