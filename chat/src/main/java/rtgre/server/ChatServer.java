@@ -52,6 +52,7 @@ public class ChatServer {
         LOGGER.info("Serveur en écoute " + passiveSock);
         clientList = new Vector<>();
         contactMap = new ContactMap();
+        postVector = new PostVector();
         contactMap.loadDefaultContacts();
     }
 
@@ -225,6 +226,7 @@ public class ChatServer {
                             break;
                         }
                     } catch (Exception e) {
+                        LOGGER.severe(e.getMessage());
                         break;
                     }
                 }
@@ -246,6 +248,7 @@ public class ChatServer {
                 return true;
             } else if (event.getType().equals(Event.MESG)) {
                 doMessage(event.getContent());
+                LOGGER.info("Receiving message");
                 return true;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
@@ -267,6 +270,7 @@ public class ChatServer {
                 sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
 
                 postVector.add(post);
+                LOGGER.info("Fin de doMessage");
             }
         }
 

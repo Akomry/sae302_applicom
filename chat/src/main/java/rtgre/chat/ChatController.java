@@ -286,7 +286,7 @@ public class ChatController implements Initializable {
         LOGGER.info(event.getType());
         if (event.getType().equals("CONT")) {
             handleContEvent(event.getContent());
-        } else if (event.getType().equals("POST")) {
+        } else if (event.getType().equals(rtgre.modeles.Event.POST)) {
             handlePostEvent(event.getContent());
         } else {
             LOGGER.warning("Unhandled event type: " + event.getType());
@@ -295,11 +295,15 @@ public class ChatController implements Initializable {
     }
 
     private void handlePostEvent(JSONObject content) {
-        if (content.getString("from").equals(contactsListView.getSelectionModel().getSelectedItem()) ||
-            content.getString("to").equals(loginTextField.getText())) {
+        System.out.println(content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()));
+        if (content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()) ||
+            content.getString("from").equals(loginTextField.getText())) {
             postVector.add(Post.fromJson(content));
+            System.out.println(postVector);
             postsObservableList.add(Post.fromJson(content));
             postListView.refresh();
+            System.out.println(postsObservableList);
+            System.out.println(postListView);
 
         }
     }
