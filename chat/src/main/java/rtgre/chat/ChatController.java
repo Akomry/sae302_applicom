@@ -99,6 +99,7 @@ public class ChatController implements Initializable {
         avatarMenuItem.setOnAction(this::handleAvatarChange);
         avatarImageView.setOnMouseClicked(this::handleAvatarChange);
         sendButton.setOnAction(this::onActionSend);
+        messageTextField.setOnAction(this::onActionSend);
 
         initContactListView();
         initPostListView();
@@ -157,7 +158,7 @@ public class ChatController implements Initializable {
             contactMap.put(this.contact.getLogin(), this.contact);
             LOGGER.info("Nouveau contact : " + contact);
             LOGGER.info(contactMap.toString());
-            Matcher matcher = hostPortPattern.matcher("localhost:2024");
+            Matcher matcher = hostPortPattern.matcher(hostComboBox.getValue());
             matcher.matches();
             String host = matcher.group(1);
             int port = (matcher.group(2) != null) ? Integer.parseInt(matcher.group(2)) : 2024;
@@ -181,9 +182,9 @@ public class ChatController implements Initializable {
                 connectionButton.setSelected(false);
             }
         } else if (!connectionButton.isSelected()) {
+            this.client.sendQuitEvent();
             clearLists();
             if (this.client.isConnected()) {
-                this.client.close();
                 this.contact.setConnected(false);
             }
             statusLabel.setText("not connected to " + hostComboBox.getValue());
@@ -300,11 +301,8 @@ public class ChatController implements Initializable {
         if (content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()) ||
             content.getString("from").equals(loginTextField.getText())) {
             postVector.add(Post.fromJson(content));
-            System.out.println(postVector);
             postsObservableList.add(Post.fromJson(content));
             postListView.refresh();
-            System.out.println(postsObservableList);
-            System.out.println(postListView);
 
         }
     }
@@ -322,6 +320,7 @@ public class ChatController implements Initializable {
                     content,
                     new File("src/main/resources/rtgre/chat/avatars.png")
             );
+            System.out.println(user.getAvatar());
             contactMap.add(user);
             contactObservableList.add(user);
             LOGGER.info(contactMap.toString());

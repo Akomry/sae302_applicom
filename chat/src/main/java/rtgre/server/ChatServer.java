@@ -254,6 +254,9 @@ public class ChatServer {
                 doListPost(event.getContent());
                 LOGGER.info("Sending Posts");
                 return true;
+            } else if (event.getType().equals(Event.QUIT)) {
+                LOGGER.info("Déconnexion");
+                return false;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
@@ -367,6 +370,8 @@ public class ChatServer {
             try {
                 sock.close();
                 removeClient(this);
+                user.setConnected(false);
+                sendEventToAllContacts(new Event(Event.CONT, user.toJsonObject()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
