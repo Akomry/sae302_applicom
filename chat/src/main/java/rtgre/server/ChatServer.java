@@ -3,9 +3,7 @@ package rtgre.server;
 import org.json.JSONException;
 import org.json.JSONObject;
 import rtgre.chat.net.ChatClient;
-import rtgre.modeles.Contact;
-import rtgre.modeles.ContactMap;
-import rtgre.modeles.Event;
+import rtgre.modeles.*;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -24,6 +22,7 @@ public class ChatServer {
     private static final Logger LOGGER = Logger.getLogger(ChatServer.class.getCanonicalName());
 
     private Vector<ChatClientHandler> clientList;
+    private PostVector postVector;
     private ContactMap contactMap;
 
     static {
@@ -237,18 +236,6 @@ public class ChatServer {
 
         private boolean handleEvent(String message) throws JSONException, IllegalStateException {
             Event event = Event.fromJson(message);
-//            switch (event.getType()) {
-//                case Event.AUTH:
-//                    doLogin(event.getContent());
-//                    LOGGER.finest("Login successful");
-//                    return true;
-//                case Event.LIST_CONTACTS:
-//                    doListContact(event.getContent());
-//                    LOGGER.finest("Sending contacts");
-//                default:
-//                    LOGGER.warning("Unhandled event type: " + event.getType());
-//                    return false;
-//            }
             if (event.getType().equals(Event.AUTH)) {
                 doLogin(event.getContent());
                 LOGGER.finest("Login successful");
@@ -256,12 +243,31 @@ public class ChatServer {
             } else if (event.getType().equals(Event.LIST_CONTACTS)) {
                 doListContact(event.getContent());
                 LOGGER.finest("Sending contacts");
+                return true;
+            } else if (event.getType().equals(Event.MESG)) {
+                doMessage(event.getContent());
+                return true;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
-
             }
-            return false;
+        }
+
+        private void doMessage(JSONObject content) throws JSONException, IllegalStateException {
+            if (content.getString("to").equals(user.getLogin()) || !contactMap.containsKey(content.getString("to"))) {
+                throw new IllegalStateException();
+            } else {
+                Post post = new Post(
+                        user.getLogin(),
+                        Message.fromJson(content)
+                );
+                Event postEvent = new Event("POST", post.toJsonObject());
+
+                sendEventToContact(contactMap.getContact(post.getFrom()), postEvent);
+                sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
+
+                postVector.add(post);
+            }
         }
 
         private void doListContact(JSONObject content) throws JSONException, IllegalStateException {

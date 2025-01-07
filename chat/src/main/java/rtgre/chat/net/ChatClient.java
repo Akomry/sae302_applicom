@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import rtgre.chat.ChatController;
 import rtgre.modeles.Contact;
 import rtgre.modeles.Event;
+import rtgre.modeles.Message;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -84,5 +85,9 @@ public class ChatClient extends ClientTCP {
 
     public ChatController getListener() {
         return listener;
+    }
+
+    public void sendMessageEvent(Message msg) {
+        sendEvent(new Event("MESG", msg.toJsonObject()));
     }
 }

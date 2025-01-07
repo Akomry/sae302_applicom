@@ -3,6 +3,7 @@ package rtgre.chat;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -110,6 +111,10 @@ public class ChatController implements Initializable {
                 .decorates(loginTextField)
                 .immediate();
 
+        ObservableValue<Boolean> canSendCondition = connectionButton.selectedProperty().not()
+                .or(contactsListView.getSelectionModel().selectedItemProperty().isNull());
+        sendButton.disableProperty().bind(canSendCondition);
+        messageTextField.disableProperty().bind(canSendCondition);
 
         /* /!\ Set-up d'environnement de test /!\ */
         /* -------------------------------------- */
@@ -122,7 +127,8 @@ public class ChatController implements Initializable {
         String login = getSelectedContactLogin();
         if (login != null) {
             Message message = new Message(login, messageTextField.getText());
-            LOGGER.info(message.toString());
+            LOGGER.info("Sending " + message);
+            client.sendMessageEvent(message);
         }
     }
 
@@ -269,7 +275,8 @@ public class ChatController implements Initializable {
         if (contactSelected != null) {
             LOGGER.info("Clic sur " + contactSelected);
         }
-        Post postSys = new Post("system", contactSelected.getLogin(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        postsObservableList.clear();
         postsObservableList.add(postSys);
         postListView.refresh();
     }
@@ -277,20 +284,23 @@ public class ChatController implements Initializable {
     public void handleEvent(rtgre.modeles.Event event) {
         LOGGER.info("Received new event! : " + event);
         LOGGER.info(event.getType());
-
-//        switch (event.getType()) {
-//            case "CONT":
-//                handleContEvent(event.getContent());
-//            default:
-//                LOGGER.warning("Unhandled event type: " + event.getType());
-//                this.client.close();
-//        }
-
         if (event.getType().equals("CONT")) {
             handleContEvent(event.getContent());
+        } else if (event.getType().equals("POST")) {
+            handlePostEvent(event.getContent());
         } else {
             LOGGER.warning("Unhandled event type: " + event.getType());
             this.client.close();
+        }
+    }
+
+    private void handlePostEvent(JSONObject content) {
+        if (content.getString("from").equals(contactsListView.getSelectionModel().getSelectedItem()) ||
+            content.getString("to").equals(loginTextField.getText())) {
+            postVector.add(Post.fromJson(content));
+            postsObservableList.add(Post.fromJson(content));
+            postListView.refresh();
+
         }
     }
 
