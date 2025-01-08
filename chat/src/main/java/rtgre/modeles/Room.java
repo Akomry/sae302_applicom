@@ -56,4 +56,8 @@ public class Room {
     public String toJson() {
         return this.toJsonObject().toString();
     }
+
+    public int getUnreadCount() {
+        return 0;
+    }
 }

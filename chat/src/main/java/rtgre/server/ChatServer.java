@@ -24,6 +24,7 @@ public class ChatServer {
     private Vector<ChatClientHandler> clientList;
     private PostVector postVector;
     private ContactMap contactMap;
+    private RoomMap roomMap;
 
     static {
         try {
@@ -53,7 +54,9 @@ public class ChatServer {
         clientList = new Vector<>();
         contactMap = new ContactMap();
         postVector = new PostVector();
+        roomMap = new RoomMap();
         contactMap.loadDefaultContacts();
+        roomMap.loadDefaultRooms();
     }
 
     public void close() throws IOException {
@@ -254,12 +257,32 @@ public class ChatServer {
                 doListPost(event.getContent());
                 LOGGER.info("Sending Posts");
                 return true;
+            } else if (event.getType().equals(Event.LIST_ROOMS)) {
+                doListRoom(event.getContent());
+                LOGGER.info("Sending Rooms");
+                return true;
             } else if (event.getType().equals(Event.QUIT)) {
                 LOGGER.info("Déconnexion");
                 return false;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
+            }
+        }
+
+        private void doListRoom(JSONObject content) {
+            System.out.println(contactMap.getContact(user.getLogin()).isConnected());
+            if (contactMap.getContact(user.getLogin()).isConnected()) {
+                for (Room room: roomMap.values()) {
+                    System.out.println(room);
+                    try {
+                        System.out.println(new Event("ROOM", room.toJsonObject()).toJson());
+                        send(new Event("ROOM", room.toJsonObject()).toJson());
+                    } catch (IOException e) {
+                        System.out.println(e.getMessage());
+                        throw new IllegalStateException();
+                    }
+                }
             }
         }
 
@@ -371,6 +394,7 @@ public class ChatServer {
                 sock.close();
                 removeClient(this);
                 user.setConnected(false);
+                contactMap.get(user.getLogin()).setConnected(false);
                 sendEventToAllContacts(new Event(Event.CONT, user.toJsonObject()));
             } catch (IOException e) {
                 throw new RuntimeException(e);

@@ -13,6 +13,8 @@ public class Event {
     public static final String LIST_CONTACTS = "LSTC";
     public static final String LIST_POSTS = "LSTP";
     public static final String SYSTEM = "SYST";
+    public static final String LIST_ROOMS = "LSTR";
+    public static final String ROOM = "ROOM";
     private final String type;
     private final JSONObject content;
 

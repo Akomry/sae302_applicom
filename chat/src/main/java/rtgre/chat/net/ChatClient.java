@@ -68,6 +68,11 @@ public class ChatClient extends ClientTCP {
         sendEvent(listPostEvent);
     }
 
+    public void sendListRoomEvent() {
+        Event listRoomEvent = new Event(Event.LIST_ROOMS, new JSONObject());
+        sendEvent(listRoomEvent);
+    }
+
     public void sendQuitEvent() {
         Event quitEvent = new Event(Event.QUIT, new JSONObject());
         sendEvent(quitEvent);

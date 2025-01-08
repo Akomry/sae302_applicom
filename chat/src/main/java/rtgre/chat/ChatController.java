@@ -26,6 +26,7 @@ import net.synedra.validatorfx.Validator;
 import org.json.JSONObject;
 import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.chat.graphisme.PostListViewCell;
+import rtgre.chat.graphisme.RoomListViewCell;
 import rtgre.chat.net.ChatClient;
 import rtgre.modeles.*;
 
@@ -68,9 +69,11 @@ public class ChatController implements Initializable {
     private ContactMap contactMap = new ContactMap();
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
     private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
-    Validator validatorLogin = new Validator();
+    private Validator validatorLogin = new Validator();
     private ChatClient client = null;
     private PostVector postVector;
+    private RoomMap roomMap = new RoomMap();
+    private ObservableList<Room> roomObservableList = FXCollections.observableArrayList();
 
 
     @Override
@@ -103,7 +106,10 @@ public class ChatController implements Initializable {
 
         initContactListView();
         initPostListView();
+        initRoomListView();
         contactsListView.getSelectionModel().selectedItemProperty().addListener(
+                (observableValue, previous, selected) -> handleContactSelection((Contact) selected));
+        roomsListView.getSelectionModel().selectedItemProperty().addListener(
                 (observableValue, previous, selected) -> handleContactSelection((Contact) selected));
 
         validatorLogin.createCheck()
@@ -122,6 +128,15 @@ public class ChatController implements Initializable {
         loginTextField.setText("riri");
         connectionButton.setSelected(true);
         /* -------------------------------------- */
+    }
+
+    private void initRoomListView() {
+        try {
+            roomsListView.setCellFactory(roomListView -> new RoomListViewCell());
+            roomsListView.setItems(roomObservableList);
+        } catch (Exception e) {
+            LOGGER.severe(e.getMessage());
+        }
     }
 
     private void onActionSend(ActionEvent actionEvent) {
@@ -173,6 +188,7 @@ public class ChatController implements Initializable {
                 this.contact.setConnected(true);
 
                 client.sendAuthEvent(contact);
+                client.sendListRoomEvent();
                 client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.LIST_CONTACTS, new JSONObject()));
 
                 initContactListView();
@@ -291,10 +307,20 @@ public class ChatController implements Initializable {
             handleContEvent(event.getContent());
         } else if (event.getType().equals(rtgre.modeles.Event.POST)) {
             handlePostEvent(event.getContent());
+        } else if (event.getType().equals(rtgre.modeles.Event.ROOM)) {
+            handleRoomEvent(event.getContent());
         } else {
             LOGGER.warning("Unhandled event type: " + event.getType());
             this.client.close();
         }
+    }
+
+    private void handleRoomEvent(JSONObject content) {
+        LOGGER.info(content.toString());
+        Room room = new Room(content.getString("room"));
+        roomMap.add(room);
+        roomObservableList.add(room);
+        roomsListView.refresh();
     }
 
     private void handlePostEvent(JSONObject content) {
