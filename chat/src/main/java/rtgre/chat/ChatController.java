@@ -130,6 +130,7 @@ public class ChatController implements Initializable {
             Message message = new Message(login, messageTextField.getText());
             LOGGER.info("Sending " + message);
             client.sendMessageEvent(message);
+            this.messageTextField.setText("");
         }
     }
 
@@ -318,7 +319,7 @@ public class ChatController implements Initializable {
             LOGGER.info(contactMap.toString());
             Contact user = Contact.fromJSON(
                     content,
-                    new File("src/main/resources/rtgre/chat/avatars.png")
+                    new File("chat/src/main/resources/rtgre/chat/avatars.png")
             );
             System.out.println(user.getAvatar());
             contactMap.add(user);
