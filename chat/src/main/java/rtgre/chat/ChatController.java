@@ -3,6 +3,7 @@ package rtgre.chat;
 import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
@@ -22,11 +23,13 @@ import javafx.stage.Stage;
 import net.synedra.validatorfx.Check;
 import net.synedra.validatorfx.TooltipWrapper;
 import net.synedra.validatorfx.Validator;
+import org.json.JSONObject;
 import rtgre.chat.graphisme.ContactListViewCell;
 import rtgre.chat.graphisme.PostListViewCell;
 import rtgre.chat.net.ChatClient;
 import rtgre.modeles.*;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +99,7 @@ public class ChatController implements Initializable {
         avatarMenuItem.setOnAction(this::handleAvatarChange);
         avatarImageView.setOnMouseClicked(this::handleAvatarChange);
         sendButton.setOnAction(this::onActionSend);
+        messageTextField.setOnAction(this::onActionSend);
 
         initContactListView();
         initPostListView();
@@ -108,6 +112,10 @@ public class ChatController implements Initializable {
                 .decorates(loginTextField)
                 .immediate();
 
+        ObservableValue<Boolean> canSendCondition = connectionButton.selectedProperty().not()
+                .or(contactsListView.getSelectionModel().selectedItemProperty().isNull());
+        sendButton.disableProperty().bind(canSendCondition);
+        messageTextField.disableProperty().bind(canSendCondition);
 
         /* /!\ Set-up d'environnement de test /!\ */
         /* -------------------------------------- */
@@ -120,7 +128,9 @@ public class ChatController implements Initializable {
         String login = getSelectedContactLogin();
         if (login != null) {
             Message message = new Message(login, messageTextField.getText());
-            LOGGER.info(message.toString());
+            LOGGER.info("Sending " + message);
+            client.sendMessageEvent(message);
+            this.messageTextField.setText("");
         }
     }
 
@@ -149,17 +159,22 @@ public class ChatController implements Initializable {
             contactMap.put(this.contact.getLogin(), this.contact);
             LOGGER.info("Nouveau contact : " + contact);
             LOGGER.info(contactMap.toString());
-            Matcher matcher = hostPortPattern.matcher("localhost:2024");
+            Matcher matcher = hostPortPattern.matcher(hostComboBox.getValue());
             matcher.matches();
             String host = matcher.group(1);
             int port = (matcher.group(2) != null) ? Integer.parseInt(matcher.group(2)) : 2024;
             try {
+                LOGGER.info(host + ":" + port);
                 this.client = new ChatClient(host, port, this);
                 initContactListView();
                 initPostListView();
                 clearLists();
                 contactMap.add(this.contact);
                 this.contact.setConnected(true);
+
+                client.sendAuthEvent(contact);
+                client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.LIST_CONTACTS, new JSONObject()));
+
                 initContactListView();
                 initPostListView();
                 this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
@@ -168,9 +183,11 @@ public class ChatController implements Initializable {
                 connectionButton.setSelected(false);
             }
         } else if (!connectionButton.isSelected()) {
+            this.client.sendQuitEvent();
             clearLists();
-            this.client.close();
-            this.contact.setConnected(false);
+            if (this.client.isConnected()) {
+                this.contact.setConnected(false);
+            }
             statusLabel.setText("not connected to " + hostComboBox.getValue());
         }
 
@@ -260,8 +277,55 @@ public class ChatController implements Initializable {
         if (contactSelected != null) {
             LOGGER.info("Clic sur " + contactSelected);
         }
-        Post postSys = new Post("system", contactSelected.getLogin(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        postsObservableList.clear();
         postsObservableList.add(postSys);
+        client.sendListPostEvent(0, contactSelected.getLogin());
         postListView.refresh();
     }
+
+    public void handleEvent(rtgre.modeles.Event event) {
+        LOGGER.info("Received new event! : " + event);
+        LOGGER.info(event.getType());
+        if (event.getType().equals("CONT")) {
+            handleContEvent(event.getContent());
+        } else if (event.getType().equals(rtgre.modeles.Event.POST)) {
+            handlePostEvent(event.getContent());
+        } else {
+            LOGGER.warning("Unhandled event type: " + event.getType());
+            this.client.close();
+        }
+    }
+
+    private void handlePostEvent(JSONObject content) {
+        System.out.println(content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()));
+        if (content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()) ||
+            content.getString("from").equals(loginTextField.getText())) {
+            postVector.add(Post.fromJson(content));
+            postsObservableList.add(Post.fromJson(content));
+            postListView.refresh();
+
+        }
+    }
+
+    private void handleContEvent(JSONObject content) {
+        Contact contact = contactMap.getContact(content.getString("login"));
+        if (contact != null) {
+            LOGGER.info(contactMap.toString());
+            contactMap.getContact(content.getString("login")).setConnected(content.getBoolean("connected"));
+            contactsListView.refresh();
+            LOGGER.info(contactMap.toString());
+        } else {
+            LOGGER.info(contactMap.toString());
+            Contact user = Contact.fromJSON(
+                    content,
+                    new File("chat/src/main/resources/rtgre/chat/avatars.png")
+            );
+            System.out.println(user.getAvatar());
+            contactMap.add(user);
+            contactObservableList.add(user);
+            LOGGER.info(contactMap.toString());
+        }
+    }
+
 }

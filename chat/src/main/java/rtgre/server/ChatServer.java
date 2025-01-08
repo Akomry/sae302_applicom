@@ -1,5 +1,10 @@
 package rtgre.server;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import rtgre.chat.net.ChatClient;
+import rtgre.modeles.*;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,6 +22,8 @@ public class ChatServer {
     private static final Logger LOGGER = Logger.getLogger(ChatServer.class.getCanonicalName());
 
     private Vector<ChatClientHandler> clientList;
+    private PostVector postVector;
+    private ContactMap contactMap;
 
     static {
         try {
@@ -31,6 +38,7 @@ public class ChatServer {
 
     public static void main(String[] args) throws IOException {
         ChatServer server = new ChatServer(2024);
+        daisyConnect();
         server.acceptClients();
     }
 
@@ -43,6 +51,9 @@ public class ChatServer {
         passiveSock = new ServerSocket(port);
         LOGGER.info("Serveur en écoute " + passiveSock);
         clientList = new Vector<>();
+        contactMap = new ContactMap();
+        postVector = new PostVector();
+        contactMap.loadDefaultContacts();
     }
 
     public void close() throws IOException {
@@ -93,12 +104,51 @@ public class ChatServer {
      */
     private void handleNewClient(Socket sock) throws IOException {
         ChatClientHandler client = new ChatClientHandler(sock);
-        Thread clientLoop = new Thread(client::echoLoop);
+        Thread clientLoop = new Thread(client::eventReceiveLoop);
         clientLoop.start();
         clientList.add(client);
         LOGGER.fine("Ajout du client [%s] dans la liste (%d clients connectés)"
                 .formatted(client.getIpPort(), clientList.size()));
         //client.echoLoop();
+    }
+
+    public ChatClientHandler findClient(Contact contact) {
+        for (ChatClientHandler user: clientList) {
+            if (user.user.equals(contact)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public void sendEventToContact(Contact contact, Event event) {
+        ChatClientHandler user = findClient(contact);
+        if (!(user == null)) {
+            try {
+                user.send(event.toJson());
+            } catch (Exception e) {
+                LOGGER.warning("!!Erreur de l'envoi d'Event à %s, fermeture de la connexion".formatted(user.user.getLogin()));
+                user.close();
+            }
+        }
+    }
+
+    public void sendEventToAllContacts(Event event) {
+        for (Contact contact: contactMap.values()) {
+            if (contact.isConnected()) {
+                sendEventToContact(contact, event);
+            }
+        }
+    }
+
+    public ContactMap getContactMap() {
+        return contactMap;
+    }
+
+    /** Temporaire : connecte daisy pour test */
+    public static void daisyConnect() throws IOException {
+        ChatClient client = new ChatClient("localhost", 2024, null);
+        client.sendAuthEvent(new Contact("daisy", null));
     }
 
     private class ChatClientHandler {
@@ -119,6 +169,8 @@ public class ChatServer {
          * Chaine de caractères "ip:port" du client
          */
         private String ipPort;
+
+        private Contact user;
 
         /**
          * Initialise les attributs {@link #sock} (socket connecté au client),
@@ -160,6 +212,123 @@ public class ChatServer {
             close();
         }
 
+        public void eventReceiveLoop() {
+            try {
+                String message = null;
+                while (!END_MESSAGE.equals(message)) {
+                    message = in.readLine();
+                    if (message == null) {
+                        break;
+                    }
+                    LOGGER.info("[%s] Réception de : %s".formatted(ipPort, message));
+                    try {
+                        if (!handleEvent(message)) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.severe(e.getMessage());
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.severe("[%s] %s".formatted(ipPort, e));
+            }
+            close();
+        }
+
+        private boolean handleEvent(String message) throws JSONException, IllegalStateException {
+            Event event = Event.fromJson(message);
+            if (event.getType().equals(Event.AUTH)) {
+                doLogin(event.getContent());
+                LOGGER.finest("Login successful");
+                return true;
+            } else if (event.getType().equals(Event.LIST_CONTACTS)) {
+                doListContact(event.getContent());
+                LOGGER.finest("Sending contacts");
+                return true;
+            } else if (event.getType().equals(Event.MESG)) {
+                doMessage(event.getContent());
+                LOGGER.info("Receiving message");
+                return true;
+            } else if (event.getType().equals(Event.LIST_POSTS)) {
+                doListPost(event.getContent());
+                LOGGER.info("Sending Posts");
+                return true;
+            } else if (event.getType().equals(Event.QUIT)) {
+                LOGGER.info("Déconnexion");
+                return false;
+            } else {
+                LOGGER.warning("Unhandled event type: " + event.getType());
+                return false;
+            }
+        }
+
+        private void doListPost(JSONObject content) throws JSONException, IllegalStateException {
+
+            if (contactMap.getContact(user.getLogin()).isConnected()) {
+                if (!contactMap.containsKey(content.getString("select"))) {
+                    throw new IllegalStateException();
+                }
+                for (Post post: postVector.getPostsSince(content.getLong("since"))) {
+                    if (post.getTo().equals(content.getString("select")) ||
+                        post.getFrom().equals(content.getString("select"))) {
+                        sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
+                    }
+                }
+            }
+        }
+
+        private void doMessage(JSONObject content) throws JSONException, IllegalStateException {
+            if (contactMap.getContact(user.getLogin()).isConnected()) {
+                if (content.getString("to").equals(user.getLogin()) || !contactMap.containsKey(content.getString("to"))) {
+                    throw new IllegalStateException();
+                } else {
+                    Post post = new Post(
+                            user.getLogin(),
+                            Message.fromJson(content)
+                    );
+                    Event postEvent = new Event("POST", post.toJsonObject());
+
+                    sendEventToContact(contactMap.getContact(post.getFrom()), postEvent);
+                    sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
+
+                    postVector.add(post);
+                    LOGGER.info("Fin de doMessage");
+                }
+            }
+        }
+
+        private void doListContact(JSONObject content) throws JSONException, IllegalStateException {
+            for (Contact contact: contactMap.values()) {
+                if (contactMap.getContact(user.getLogin()).isConnected()) {
+                    try {
+                        send(new Event(Event.CONT, contact.toJsonObject()).toJson());
+                    } catch (IOException e) {
+                        throw new IllegalStateException();
+                    }
+                }
+            }
+        }
+
+        private void doLogin(JSONObject content) {
+            String login = content.getString("login");
+            if (login.isEmpty()) {
+                LOGGER.warning("Aucun login fourni");
+                throw new JSONException("Aucun login fourni");
+            } else if (!contactMap.containsKey(login)) {
+                LOGGER.warning("Login non-authorisé");
+                throw new IllegalStateException("Login non-authorisé");
+            } else {
+                LOGGER.info("Connexion de " + login);
+                contactMap.getContact(login).setConnected(true);
+                this.user = contactMap.getContact(login);
+                sendAllOtherClients(
+                        findClient(contactMap.getContact(login)),
+                        new Event("CONT", user.toJsonObject()).toJson()
+                );
+            }
+        }
+
         public void send(String message) throws IOException {
             LOGGER.finest("send: %s".formatted(message));
             out.println(message);
@@ -189,7 +358,7 @@ public class ChatServer {
 
         public String receive() throws IOException {
             String message = in.readLine();
-            LOGGER.finest("receive: %s".formatted(message));
+            LOGGER.info("receive: %s".formatted(message));
             if (message == null) {
                 throw new IOException("End of the stream has been reached");
             }
@@ -201,6 +370,8 @@ public class ChatServer {
             try {
                 sock.close();
                 removeClient(this);
+                user.setConnected(false);
+                sendEventToAllContacts(new Event(Event.CONT, user.toJsonObject()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
