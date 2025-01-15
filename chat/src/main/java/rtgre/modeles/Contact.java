@@ -137,4 +137,9 @@ public class Contact {
             System.out.println("Erreur : " + e.getMessage());
         }
     }
+
+    public void setCurrentRoom(String currentRoom) {
+        this.currentRoom = currentRoom;
+    }
+
 }

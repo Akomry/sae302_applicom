@@ -68,6 +68,11 @@ public class ChatClient extends ClientTCP {
         sendEvent(listPostEvent);
     }
 
+    public void sendListRoomEvent() {
+        Event listRoomEvent = new Event(Event.LIST_ROOMS, new JSONObject());
+        sendEvent(listRoomEvent);
+    }
+
     public void sendQuitEvent() {
         Event quitEvent = new Event(Event.QUIT, new JSONObject());
         sendEvent(quitEvent);
@@ -83,6 +88,7 @@ public class ChatClient extends ClientTCP {
                 LOGGER.info(RED + "Réception: " + message + RST);
                 LOGGER.info(RED + message + RST);
                 if (listener != null) {
+                    System.out.println(message);
                     Platform.runLater(() -> listener.handleEvent(Event.fromJson(message)));
                 }
             }
