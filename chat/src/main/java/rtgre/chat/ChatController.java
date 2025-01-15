@@ -110,7 +110,7 @@ public class ChatController implements Initializable {
         contactsListView.getSelectionModel().selectedItemProperty().addListener(
                 (observableValue, previous, selected) -> handleContactSelection((Contact) selected));
         roomsListView.getSelectionModel().selectedItemProperty().addListener(
-                (observableValue, previous, selected) -> handleContactSelection((Contact) selected));
+                (observableValue, previous, selected) -> handleRoomSelection((Room) selected));
 
         validatorLogin.createCheck()
                 .dependsOn("login", loginTextField.textProperty())
@@ -119,7 +119,11 @@ public class ChatController implements Initializable {
                 .immediate();
 
         ObservableValue<Boolean> canSendCondition = connectionButton.selectedProperty().not()
-                .or(contactsListView.getSelectionModel().selectedItemProperty().isNull());
+                .or(
+                        roomsListView.getSelectionModel().selectedItemProperty().isNull()
+                        .and(contactsListView.getSelectionModel().selectedItemProperty().isNull())
+                );
+
         sendButton.disableProperty().bind(canSendCondition);
         messageTextField.disableProperty().bind(canSendCondition);
 
@@ -140,7 +144,12 @@ public class ChatController implements Initializable {
     }
 
     private void onActionSend(ActionEvent actionEvent) {
-        String login = getSelectedContactLogin();
+        String login = null;
+        if (!(getSelectedContactLogin() == null)) {
+            login = getSelectedContactLogin();
+        } else if (!(getSelectedRoomName() == null)) {
+            login = getSelectedRoomName();
+        }
         if (login != null) {
             Message message = new Message(login, messageTextField.getText());
             LOGGER.info("Sending " + message);
@@ -212,8 +221,10 @@ public class ChatController implements Initializable {
     private void clearLists() {
         this.contactMap = new ContactMap();
         this.postVector = new PostVector();
+        this.roomMap = new RoomMap();
         contactObservableList.clear();
         postsObservableList.clear();
+        roomObservableList.clear();
     }
 
     private void checkLogin(Check.Context context) {
@@ -281,6 +292,19 @@ public class ChatController implements Initializable {
         return login;
     }
 
+    public String getSelectedRoomName() {
+        Room room;
+        String roomName;
+        try {
+            room = (Room) roomsListView.getSelectionModel().getSelectedItem();
+            roomName = room.getRoomName();
+        } catch (Exception e) {
+            roomName = null;
+        }
+        LOGGER.info("Selected room: " + roomName);
+        return roomName;
+    }
+
     public Contact getContact() {
         return contact;
     }
@@ -289,10 +313,33 @@ public class ChatController implements Initializable {
         return contactMap;
     }
 
+    void handleRoomSelection(Room roomSelected) {
+
+        if (roomSelected != null) {
+            LOGGER.info("Clic sur " + roomSelected);
+        }
+
+        if (!contactsListView.getSelectionModel().isEmpty()) {
+            contactsListView.getSelectionModel().clearSelection();
+        }
+        contact.setCurrentRoom(roomSelected.getRoomName());
+        Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans le salon " + roomSelected);
+        postsObservableList.clear();
+        postsObservableList.add(postSys);
+        client.sendEvent(new rtgre.modeles.Event("JOIN", new JSONObject().put("room", roomSelected.getRoomName())));
+        client.sendListPostEvent(0, roomSelected.toString());
+        postListView.refresh();
+    }
+
     void handleContactSelection(Contact contactSelected) {
         if (contactSelected != null) {
             LOGGER.info("Clic sur " + contactSelected);
         }
+
+        if (!roomsListView.getSelectionModel().isEmpty()) {
+            roomsListView.getSelectionModel().clearSelection();
+        }
+
         Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
         postsObservableList.clear();
         postsObservableList.add(postSys);
@@ -324,13 +371,24 @@ public class ChatController implements Initializable {
     }
 
     private void handlePostEvent(JSONObject content) {
-        System.out.println(content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()));
-        if (content.getString("to").equals(((Contact) contactsListView.getSelectionModel().getSelectedItem()).getLogin()) ||
-            content.getString("from").equals(loginTextField.getText())) {
-            postVector.add(Post.fromJson(content));
-            postsObservableList.add(Post.fromJson(content));
-            postListView.refresh();
-
+        if (contactsListView.getSelectionModel().getSelectedItem() != null) {
+            System.out.println(contactsListView.getSelectionModel().getSelectedItem());
+            if (content.getString("to").equals(contact.getLogin()) ||
+                    content.getString("from").equals(loginTextField.getText())) {
+                System.out.println("New message! to:dm");
+                postVector.add(Post.fromJson(content));
+                postsObservableList.add(Post.fromJson(content));
+                postListView.refresh();
+            }
+        } else if (roomsListView.getSelectionModel().getSelectedItem() != null) {
+            if (content.getString("to").contains("#")) {
+                if (this.contact.getCurrentRoom().contains(content.getString("to"))) {
+                    System.out.println("New Message! to:room");
+                    postVector.add(Post.fromJson(content));
+                    postsObservableList.add(Post.fromJson(content));
+                    postListView.refresh();
+                }
+            }
         }
     }
 

@@ -88,6 +88,7 @@ public class ChatClient extends ClientTCP {
                 LOGGER.info(RED + "Réception: " + message + RST);
                 LOGGER.info(RED + message + RST);
                 if (listener != null) {
+                    System.out.println(message);
                     Platform.runLater(() -> listener.handleEvent(Event.fromJson(message)));
                 }
             }

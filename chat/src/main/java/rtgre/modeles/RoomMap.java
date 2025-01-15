@@ -4,7 +4,7 @@ import java.util.TreeMap;
 
 public class RoomMap extends TreeMap<String, Room> {
     public void add(Room room) {
-        this.put(room.roomName, room);
+        this.put(room.getRoomName(), room);
     }
 
     public void loadDefaultRooms() {

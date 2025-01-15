@@ -261,6 +261,10 @@ public class ChatServer {
                 doListRoom(event.getContent());
                 LOGGER.info("Sending Rooms");
                 return true;
+            } else if (event.getType().equals(Event.JOIN)) {
+                doJoin(event.getContent());
+                LOGGER.info("New user joining room!");
+                return true;
             } else if (event.getType().equals(Event.QUIT)) {
                 LOGGER.info("Déconnexion");
                 return false;
@@ -270,16 +274,28 @@ public class ChatServer {
             }
         }
 
+        private void doJoin(JSONObject content) {
+            if (content.getString("room").isEmpty()) {
+                user.setCurrentRoom(null);
+            }
+            if (user.getLogin().isEmpty()) {
+                user.setCurrentRoom(null);
+                return;
+            }
+            if (roomMap.get(content.getString("room")).getLoginSet() == null) {
+                user.setCurrentRoom(content.getString("room"));
+            }
+            else if (roomMap.get(content.getString("room")).getLoginSet().contains(user.getLogin())) {
+                user.setCurrentRoom(content.getString("room"));
+            }
+        }
+
         private void doListRoom(JSONObject content) {
-            System.out.println(contactMap.getContact(user.getLogin()).isConnected());
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 for (Room room: roomMap.values()) {
-                    System.out.println(room);
                     try {
-                        System.out.println(new Event("ROOM", room.toJsonObject()).toJson());
                         send(new Event("ROOM", room.toJsonObject()).toJson());
                     } catch (IOException e) {
-                        System.out.println(e.getMessage());
                         throw new IllegalStateException();
                     }
                 }
@@ -287,14 +303,22 @@ public class ChatServer {
         }
 
         private void doListPost(JSONObject content) throws JSONException, IllegalStateException {
-
             if (contactMap.getContact(user.getLogin()).isConnected()) {
-                if (!contactMap.containsKey(content.getString("select"))) {
+                if (!contactMap.containsKey(content.getString("select")) && !roomMap.containsKey(content.getString("select"))) {
+                    System.out.println("!select");
                     throw new IllegalStateException();
                 }
-                for (Post post: postVector.getPostsSince(content.getLong("since"))) {
-                    if (post.getTo().equals(content.getString("select")) ||
-                        post.getFrom().equals(content.getString("select"))) {
+                if (!content.getString("select").contains("#")) {
+                    System.out.println("!#");
+                    for (Post post : postVector.getPostsSince(content.getLong("since"))) {
+                        if (post.getTo().equals(content.getString("select")) ||
+                                post.getFrom().equals(content.getString("select"))) {
+                            sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
+                        }
+                    }
+                } else if (user.getCurrentRoom().equals(content.getString("select"))) {
+                    System.out.println("#");
+                    for (Post post: postVector.getPostsSince(content.getLong("since"))) {
                         sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
                     }
                 }
@@ -303,9 +327,10 @@ public class ChatServer {
 
         private void doMessage(JSONObject content) throws JSONException, IllegalStateException {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
-                if (content.getString("to").equals(user.getLogin()) || !contactMap.containsKey(content.getString("to"))) {
-                    throw new IllegalStateException();
-                } else {
+                if (content.getString("to").equals(user.getLogin()) ||
+                    (!contactMap.containsKey(content.getString("to"))) && !roomMap.containsKey(content.getString("to"))) {
+                    throw new IllegalStateException("IllegalStateException! Cannot Post");
+                } if(!content.getString("to").contains("#")) {
                     Post post = new Post(
                             user.getLogin(),
                             Message.fromJson(content)
@@ -316,7 +341,24 @@ public class ChatServer {
                     sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
 
                     postVector.add(post);
-                    LOGGER.info("Fin de doMessage");
+                    LOGGER.info("Fin de doMessage:dm");
+                } else {
+                    Post post = new Post(
+                            user.getLogin(),
+                            Message.fromJson(content)
+                    );
+                    Event postEvent = new Event("POST", post.toJsonObject());
+
+                    for (ChatClientHandler client: clientList) {
+                        if (client.user.getCurrentRoom() != null) {
+                            if (client.user.getCurrentRoom().equals(content.getString("to"))) {
+                                sendEventToContact(client.user, postEvent);
+                            }
+                        }
+                    }
+                    postVector.add(post);
+                    LOGGER.info("Fin de doMessage:room");
+
                 }
             }
         }
@@ -345,6 +387,7 @@ public class ChatServer {
                 LOGGER.info("Connexion de " + login);
                 contactMap.getContact(login).setConnected(true);
                 this.user = contactMap.getContact(login);
+                System.out.println(user.isConnected());
                 sendAllOtherClients(
                         findClient(contactMap.getContact(login)),
                         new Event("CONT", user.toJsonObject()).toJson()
@@ -366,11 +409,11 @@ public class ChatServer {
 
         public void sendAllOtherClients(ChatClientHandler fromClient, String message) {
             for (ChatClientHandler client : clientList) {
-                if (!client.equals(this)) {
+                if (!client.equals(fromClient)) {
                     LOGGER.fine(clientList.toString());
                     LOGGER.fine("Envoi vers [%s] : %s".formatted(client.getIpPort(), message));
                     try {
-                        client.send("[%s] %s".formatted(fromClient.getIpPort(), message));
+                        client.send(message);
                     } catch (Exception e) {
                         LOGGER.severe("[%s] %s".formatted(client.getIpPort(), e));
                         client.close();
