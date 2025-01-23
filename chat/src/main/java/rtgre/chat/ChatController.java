@@ -59,8 +59,8 @@ public class ChatController implements Initializable {
     public ImageView avatarImageView;
     public SplitPane exchangeSplitPane;
     public ListView postListView;
-    public ListView roomsListView;
-    public ListView contactsListView;
+    public ListView<Room> roomsListView;
+    public ListView<Contact> contactsListView;
     public TextField messageTextField;
     public Button sendButton;
     public Label statusLabel;
@@ -79,7 +79,6 @@ public class ChatController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         LOGGER.info("Initialisation de l'interface graphique");
-
         Image image = new Image(Objects.requireNonNull(ChatController.class.getResourceAsStream("anonymous.png")));
         this.avatarImageView.setImage(image);
 
@@ -340,6 +339,8 @@ public class ChatController implements Initializable {
             roomsListView.getSelectionModel().clearSelection();
         }
 
+        contactSelected.getUnreadCount().setUnreadCount(0);
+
         Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
         postsObservableList.clear();
         postsObservableList.add(postSys);
@@ -371,23 +372,45 @@ public class ChatController implements Initializable {
     }
 
     private void handlePostEvent(JSONObject content) {
-        if (contactsListView.getSelectionModel().getSelectedItem() != null) {
-            System.out.println(contactsListView.getSelectionModel().getSelectedItem());
-            if (content.getString("to").equals(contact.getLogin()) ||
-                    content.getString("from").equals(loginTextField.getText())) {
-                System.out.println("New message! to:dm");
-                postVector.add(Post.fromJson(content));
-                postsObservableList.add(Post.fromJson(content));
-                postListView.refresh();
-            }
-        } else if (roomsListView.getSelectionModel().getSelectedItem() != null) {
-            if (content.getString("to").contains("#")) {
-                if (this.contact.getCurrentRoom().contains(content.getString("to"))) {
-                    System.out.println("New Message! to:room");
+
+        LOGGER.finest("Selected: " + contactsListView.getSelectionModel().getSelectedItem());
+        LOGGER.finest("From: " + content.getString("from"));
+        LOGGER.finest("To: " + content.getString("to"));
+
+        if (!content.getString("to").contains("#")) {
+            System.out.println("New message to contact!");
+            if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("to"))) {
+                    LOGGER.info("New message! to:dm, from:" + content.getString("from"));
                     postVector.add(Post.fromJson(content));
                     postsObservableList.add(Post.fromJson(content));
                     postListView.refresh();
+            }
+            if (contact.getLogin().equals(content.getString("to"))) {
+                if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("from"))) {
+                    LOGGER.info("New message! to:dm, from:myself");
+                    postVector.add(Post.fromJson(content));
+                    postsObservableList.add(Post.fromJson(content));
+                    postListView.refresh();
+                } else {
+                    contactMap.getContact(content.getString("from")).getUnreadCount().incrementUnreadCount();
+                    contactsListView.refresh();
+                    LOGGER.info("New unread message ! from:");
+                    LOGGER.info("%d".formatted(contactsListView.getSelectionModel().getSelectedItem().getUnreadCount().getUnreadCount()));
                 }
+            }
+
+        } else {
+            System.out.println("New message to room!");
+            if (roomsListView.getSelectionModel().getSelectedItem().getRoomName().equals(content.getString("from"))) {
+                LOGGER.info("New message! to:dm, from:myself");
+                postVector.add(Post.fromJson(content));
+                postsObservableList.add(Post.fromJson(content));
+                postListView.refresh();
+            } else {
+                roomMap.get(content.getString("from")).getUnreadCount().incrementUnreadCount();
+                roomsListView.refresh();
+                LOGGER.info("New unread message ! from:");
+                LOGGER.info("%d".formatted(contactsListView.getSelectionModel().getSelectedItem().getUnreadCount().getUnreadCount()));
             }
         }
     }
