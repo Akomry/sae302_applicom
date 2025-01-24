@@ -376,13 +376,13 @@ public class ChatController implements Initializable {
 
     private void handlePostEvent(JSONObject content) {
 
-        LOGGER.finest("Selected: " + contactsListView.getSelectionModel().getSelectedItem());
-        LOGGER.finest("From: " + content.getString("from"));
-        LOGGER.finest("To: " + content.getString("to"));
+        System.out.println("Selected: " + roomsListView.getSelectionModel().getSelectedItem());
+        System.out.println("From: " + content.getString("from"));
+        System.out.println("To: " + content.getString("to"));
 
         try {
             if (!content.getString("to").contains("#")) {
-                System.out.println("New message to contact!");
+                LOGGER.info("New message to contact!");
                 if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("to"))) {
                     LOGGER.info("New message! to:dm, from:" + content.getString("from"));
                     postVector.add(Post.fromJson(content));
@@ -419,7 +419,6 @@ public class ChatController implements Initializable {
                 }
             }
         } catch (Exception e) {
-            /*
             if (content.getString("to").contains("#")) {
                 roomMap.get(content.getString("to")).getUnreadCount().incrementUnreadCount();
                 roomsListView.refresh();
@@ -428,7 +427,7 @@ public class ChatController implements Initializable {
                 contactMap.getContact(content.getString("from")).getUnreadCount().incrementUnreadCount();
                 contactsListView.refresh();
                 LOGGER.info("New message to contact + nothing sel");
-            }*/
+            }
         }
     }
     private void handleContEvent(JSONObject content) {
