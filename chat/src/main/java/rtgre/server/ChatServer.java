@@ -268,9 +268,20 @@ public class ChatServer {
             } else if (event.getType().equals(Event.QUIT)) {
                 LOGGER.info("Déconnexion");
                 return false;
+            } else if (event.getType().equals(Event.CONT)) {
+                doCont(event.getContent());
+                LOGGER.info("Update de contact");
+                return true;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
+            }
+        }
+
+        private void doCont(JSONObject content) {
+            if (user.isConnected()) {
+                sendEventToAllContacts(new Event("CONT", content));
+                contactMap.getContact(content.getString("login")).setAvatar(Contact.base64ToImage(content.getString("avatar")));
             }
         }
 
@@ -368,11 +379,7 @@ public class ChatServer {
         private void doListContact(JSONObject content) throws JSONException, IllegalStateException {
             for (Contact contact: contactMap.values()) {
                 if (contactMap.getContact(user.getLogin()).isConnected()) {
-                    try {
-                        send(new Event(Event.CONT, contact.toJsonObject()).toJson());
-                    } catch (IOException e) {
-                        throw new IllegalStateException();
-                    }
+                    sendEventToContact(user, new Event(Event.CONT, contact.toJsonObject()));
                 }
             }
         }

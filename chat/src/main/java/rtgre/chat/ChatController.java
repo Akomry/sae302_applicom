@@ -170,9 +170,10 @@ public class ChatController implements Initializable {
         File selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
             avatarImageView.setImage(new Image(selectedFile.toURI().toString()));
+            contact.setAvatarFromFile(selectedFile);
         }
+        client.sendEvent(new rtgre.modeles.Event("CONT", this.contact.toJsonObject()));
     }
-
 
 
     private void handleConnection(Observable observable) {
@@ -198,7 +199,7 @@ public class ChatController implements Initializable {
                 client.sendAuthEvent(contact);
                 client.sendListRoomEvent();
                 client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.LIST_CONTACTS, new JSONObject()));
-
+                client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.CONT, contact.toJsonObject()));
                 initContactListView();
                 initPostListView();
                 this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
@@ -432,18 +433,29 @@ public class ChatController implements Initializable {
     }
     private void handleContEvent(JSONObject content) {
         Contact contact = contactMap.getContact(content.getString("login"));
+        java.awt.Image avatar = null;
+        if (!content.getString("avatar").isEmpty()) {
+            avatar = Contact.base64ToImage(content.getString("avatar"));
+        }
+        System.out.println(avatar);
         if (contact != null) {
             LOGGER.info(contactMap.toString());
             contactMap.getContact(content.getString("login")).setConnected(content.getBoolean("connected"));
+            if (avatar != null) {
+                contactMap.getContact(content.getString("login")).setAvatar(avatar);
+            }
             contactsListView.refresh();
             LOGGER.info(contactMap.toString());
         } else {
+            System.out.println(content);
             LOGGER.info(contactMap.toString());
             Contact user = Contact.fromJSON(
                     content,
                     new File("chat/src/main/resources/rtgre/chat/avatars.png")
             );
-            System.out.println(user.getAvatar());
+            if (avatar != null) {
+                user.setAvatar(avatar);
+            }
             contactMap.add(user);
             contactObservableList.add(user);
             LOGGER.info(contactMap.toString());
