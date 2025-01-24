@@ -54,7 +54,7 @@ public class RoomListViewCell extends ListCell<Room> {
     private void updateRoom(Room room) {
         LOGGER.finest("Mise à jour de " + room);
 
-        String unreadCountNotif = (room.getUnreadCount() == 0) ? "" : " (%d)".formatted(room.getUnreadCount());
+        String unreadCountNotif = (room.getUnreadCount().getUnreadCount() == 0) ? "" : " (%d)".formatted(room.getUnreadCount().getUnreadCount());
         LOGGER.finest("unread: %s %s".formatted(room.getRoomName(), unreadCountNotif));
         Text roomText = new Text(room.getRoomName() + unreadCountNotif);
         roomText.setFont(Font.font(null, 12)); // FontWeight.BOLD, 14));

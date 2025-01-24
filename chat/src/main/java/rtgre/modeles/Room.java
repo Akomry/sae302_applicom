@@ -8,6 +8,7 @@ import java.util.Objects;
 public class Room {
     protected String roomName;
     protected HashSet<String> loginSet;
+    protected UnreadCount unreadCount = new UnreadCount();
 
 
     public String getRoomName() {
@@ -57,7 +58,7 @@ public class Room {
         return this.toJsonObject().toString();
     }
 
-    public int getUnreadCount() {
-        return 0;
+    public UnreadCount getUnreadCount() {
+        return this.unreadCount;
     }
 }

@@ -16,25 +16,27 @@ public class Contact {
     protected java.awt.Image avatar;
     protected boolean connected;
     protected String currentRoom;
+    protected UnreadCount unreadCount = new UnreadCount();
 
+    /**
+     * Crée un objet Contact
+     * @param: String login
+     * @param: java.awt.Image avatar
+     */
     public Contact(String login, java.awt.Image avatar) {
-        /**
-         * Crée un objet Contact
-         * @param: String login
-         * @param: java.awt.Image avatar
-         */
         this.login = login;
         this.avatar = avatar;
         this.connected = false;
         this.currentRoom = null;
     }
+
+    /**
+     * Crée un objet Contact
+     * @param: String login
+     * @param: boolean connected
+     * @param: java.awt.Image avatar
+     */
     public Contact(String login, boolean connected, java.awt.Image avatar) {
-        /**
-         * Crée un objet Contact
-         * @param: String login
-         * @param: boolean connected
-         * @param: java.awt.Image avatar
-         */
         this.login = login;
         this.avatar = avatar;
         this.connected = connected;
@@ -45,13 +47,13 @@ public class Contact {
         return currentRoom;
     }
 
+    /**
+     * Crée un objet Contact
+     * @param: String login
+     * @param: boolean connected
+     * @param: File banques_avatars
+     */
     public Contact(String login, boolean connected, File banques_avatars) {
-        /**
-         * Crée un objet Contact
-         * @param: String login
-         * @param: boolean connected
-         * @param: File banques_avatars
-         */
         this.login = login;
         try {
             this.avatar = avatarFromLogin(banques_avatars, login);
@@ -99,8 +101,8 @@ public class Contact {
         return Objects.hashCode(login);
     }
 
-    public int getUnreadCount() {
-        return 0;
+    public UnreadCount getUnreadCount() {
+        return unreadCount;
     }
 
     public JSONObject toJsonObject() {
