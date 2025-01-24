@@ -54,7 +54,7 @@ public class ContactListViewCell extends ListCell<Contact> {
         LOGGER.finest("Mise à jour de " + contact);
 
         String unreadCountNotif = (contact.getUnreadCount().getUnreadCount() == 0) ? "" : " (%d)".formatted(contact.getUnreadCount().getUnreadCount());
-        LOGGER.warning("unread: %s %s".formatted(contact.getLogin(), unreadCountNotif));
+        LOGGER.finest("unread: %s %s".formatted(contact.getLogin(), unreadCountNotif));
         Text loginText = new Text(contact.getLogin() + unreadCountNotif);
         loginText.setFont(Font.font(null, 12)); // FontWeight.BOLD, 14));
         loginText.setFill(contact.isConnected() ? Color.BLACK : Color.GRAY);

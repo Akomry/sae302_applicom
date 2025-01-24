@@ -91,7 +91,7 @@ public class ChatController implements Initializable {
         hostComboBox.setValue("localhost:2024");
         hostComboBox.setOnAction(this::statusNameUpdate);
 
-        statusLabel.setText("not connected to " + hostComboBox.getValue());
+        statusLabel.setText("Disconnected");
 
         connectionButton.disableProperty().bind(validatorLogin.containsErrorsProperty());
         connectionButton.selectedProperty().addListener(this::handleConnection);
@@ -212,9 +212,8 @@ public class ChatController implements Initializable {
             if (this.client.isConnected()) {
                 this.contact.setConnected(false);
             }
-            statusLabel.setText("not connected to " + hostComboBox.getValue());
+            statusLabel.setText("Disconnected");
         }
-
     }
 
     private void clearLists() {
@@ -322,6 +321,10 @@ public class ChatController implements Initializable {
             contactsListView.getSelectionModel().clearSelection();
         }
         contact.setCurrentRoom(roomSelected.getRoomName());
+
+        roomSelected.getUnreadCount().setUnreadCount(0);
+        roomsListView.refresh();
+
         Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans le salon " + roomSelected);
         postsObservableList.clear();
         postsObservableList.add(postSys);
@@ -377,44 +380,57 @@ public class ChatController implements Initializable {
         LOGGER.finest("From: " + content.getString("from"));
         LOGGER.finest("To: " + content.getString("to"));
 
-        if (!content.getString("to").contains("#")) {
-            System.out.println("New message to contact!");
-            if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("to"))) {
+        try {
+            if (!content.getString("to").contains("#")) {
+                System.out.println("New message to contact!");
+                if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("to"))) {
                     LOGGER.info("New message! to:dm, from:" + content.getString("from"));
                     postVector.add(Post.fromJson(content));
                     postsObservableList.add(Post.fromJson(content));
                     postListView.refresh();
-            }
-            if (contact.getLogin().equals(content.getString("to"))) {
-                if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("from"))) {
-                    LOGGER.info("New message! to:dm, from:myself");
+                }
+                if (contact.getLogin().equals(content.getString("to"))) {
+                    if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("from"))) {
+                        LOGGER.info("New message! to:dm, from:myself");
+                        postVector.add(Post.fromJson(content));
+                        postsObservableList.add(Post.fromJson(content));
+                        postListView.refresh();
+
+                    } else {
+                        contactMap.getContact(content.getString("from")).getUnreadCount().incrementUnreadCount();
+                        contactsListView.refresh();
+                        LOGGER.info("New unread message ! from:" + content.getString("from"));
+                        LOGGER.info("%d".formatted(contactsListView.getSelectionModel().getSelectedItem().getUnreadCount().getUnreadCount()));
+                    }
+                }
+
+            } else {
+                LOGGER.info("New message to room!");
+                if (roomsListView.getSelectionModel().getSelectedItem().getRoomName().equals(content.getString("to"))) {
+                    LOGGER.info("New message! to:room, from:myself");
                     postVector.add(Post.fromJson(content));
                     postsObservableList.add(Post.fromJson(content));
                     postListView.refresh();
                 } else {
-                    contactMap.getContact(content.getString("from")).getUnreadCount().incrementUnreadCount();
-                    contactsListView.refresh();
-                    LOGGER.info("New unread message ! from:");
+                    roomMap.get(content.getString("to")).getUnreadCount().incrementUnreadCount();
+                    roomsListView.refresh();
+                    LOGGER.info("New unread message ! from:" + content.getString("from"));
                     LOGGER.info("%d".formatted(contactsListView.getSelectionModel().getSelectedItem().getUnreadCount().getUnreadCount()));
                 }
             }
-
-        } else {
-            System.out.println("New message to room!");
-            if (roomsListView.getSelectionModel().getSelectedItem().getRoomName().equals(content.getString("from"))) {
-                LOGGER.info("New message! to:dm, from:myself");
-                postVector.add(Post.fromJson(content));
-                postsObservableList.add(Post.fromJson(content));
-                postListView.refresh();
-            } else {
-                roomMap.get(content.getString("from")).getUnreadCount().incrementUnreadCount();
+        } catch (Exception e) {
+            /*
+            if (content.getString("to").contains("#")) {
+                roomMap.get(content.getString("to")).getUnreadCount().incrementUnreadCount();
                 roomsListView.refresh();
-                LOGGER.info("New unread message ! from:");
-                LOGGER.info("%d".formatted(contactsListView.getSelectionModel().getSelectedItem().getUnreadCount().getUnreadCount()));
-            }
+                LOGGER.info("New message to room + nothing sel");
+            } else {
+                contactMap.getContact(content.getString("from")).getUnreadCount().incrementUnreadCount();
+                contactsListView.refresh();
+                LOGGER.info("New message to contact + nothing sel");
+            }*/
         }
     }
-
     private void handleContEvent(JSONObject content) {
         Contact contact = contactMap.getContact(content.getString("login"));
         if (contact != null) {

@@ -319,7 +319,9 @@ public class ChatServer {
                 } else if (user.getCurrentRoom().equals(content.getString("select"))) {
                     System.out.println("#");
                     for (Post post: postVector.getPostsSince(content.getLong("since"))) {
-                        sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
+                        if (post.getTo().equals(content.getString("select"))) {
+                            sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
+                        }
                     }
                 }
             }
