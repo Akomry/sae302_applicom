@@ -126,11 +126,6 @@ public class ChatController implements Initializable {
         sendButton.disableProperty().bind(canSendCondition);
         messageTextField.disableProperty().bind(canSendCondition);
 
-        /* /!\ Set-up d'environnement de test /!\ */
-        /* -------------------------------------- */
-        loginTextField.setText("riri");
-        connectionButton.setSelected(true);
-        /* -------------------------------------- */
     }
 
     private void initRoomListView() {
