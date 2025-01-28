@@ -4,9 +4,13 @@ package rtgre.modeles;
 import org.json.JSONObject;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Objects;
 
 import static rtgre.chat.ChatApplication.LOGGER;
@@ -108,7 +112,8 @@ public class Contact {
     public JSONObject toJsonObject() {
         return new JSONObject()
                 .put("login", this.login)
-                .put("connected", this.connected);
+                .put("connected", this.connected)
+                .put("avatar", Contact.imageToBase64((BufferedImage) avatar));
     }
 
     public String toJson() {
@@ -140,8 +145,35 @@ public class Contact {
         }
     }
 
+    public void setAvatar(java.awt.Image avatar) {
+        this.avatar = avatar;
+    }
+
     public void setCurrentRoom(String currentRoom) {
         this.currentRoom = currentRoom;
+    }
+
+    public static String imageToBase64(BufferedImage img) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(img, "png", bos);
+            System.out.println(Base64.getEncoder().encodeToString(bos.toByteArray()));
+            return Base64.getEncoder().encodeToString(bos.toByteArray());
+        } catch (IOException e) {
+            LOGGER.severe("Impossible de convertir l'image en base64");
+        }
+        return "";
+    }
+
+    public static java.awt.Image base64ToImage(String avatar64) {
+        byte[] bytes64 = Base64.getDecoder().decode(avatar64);
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes64));
+            return image;
+        } catch (IOException e) {
+            LOGGER.severe("Impossible de convertir le base64 en image");
+        }
+        return null;
     }
 
 }
