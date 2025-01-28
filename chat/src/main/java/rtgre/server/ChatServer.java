@@ -39,7 +39,7 @@ public class ChatServer {
 
     public static void main(String[] args) throws IOException {
         ChatServer server = new ChatServer(2024);
-        daisyConnect();
+        //daisyConnect();
         server.acceptClients();
     }
 

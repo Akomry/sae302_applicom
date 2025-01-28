@@ -156,16 +156,20 @@ public class ChatController implements Initializable {
         /**
          * Ouvre une fenêtre de dialogue permettant de choisir son avatar
          */
-        FileChooser fileChooser = new FileChooser();
-        Stage stage = (Stage) avatarImageView.getScene().getWindow();
-        fileChooser.setTitle("Select Avatar");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg")
-        );
-        File selectedFile = fileChooser.showOpenDialog(stage);
-        if (selectedFile != null) {
-            avatarImageView.setImage(new Image(selectedFile.toURI().toString()));
-            contact.setAvatarFromFile(selectedFile);
+        try {
+            FileChooser fileChooser = new FileChooser();
+            Stage stage = (Stage) avatarImageView.getScene().getWindow();
+            fileChooser.setTitle("Select Avatar");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg")
+            );
+            File selectedFile = fileChooser.showOpenDialog(stage);
+            if (selectedFile != null) {
+                avatarImageView.setImage(new Image(selectedFile.toURI().toString()));
+                contact.setAvatar(ImageIO.read(selectedFile));
+            }
+        } catch (IOException e) {
+            LOGGER.warning("Impossible de lire l'image!");
         }
         client.sendEvent(new rtgre.modeles.Event("CONT", this.contact.toJsonObject()));
     }
@@ -256,9 +260,9 @@ public class ChatController implements Initializable {
             contactsListView.setCellFactory(contactListView -> new ContactListViewCell());
             contactsListView.setItems(contactObservableList);
             File avatars = new File(getClass().getResource("avatars.png").toURI());
-            Contact fifi = new Contact("fifi", true, avatars);
-            contactObservableList.add(fifi);
-            contactMap.add(fifi);
+            //Contact fifi = new Contact("fifi", true, avatars);
+            //contactObservableList.add(fifi);
+            //contactMap.add(fifi);
         } catch (Exception e) {
             LOGGER.severe(e.getMessage());
         }

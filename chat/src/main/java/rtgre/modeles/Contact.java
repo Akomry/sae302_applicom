@@ -157,6 +157,7 @@ public class Contact {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
             ImageIO.write(img, "png", bos);
+            System.out.println(Base64.getEncoder().encodeToString(bos.toByteArray()));
             return Base64.getEncoder().encodeToString(bos.toByteArray());
         } catch (IOException e) {
             LOGGER.severe("Impossible de convertir l'image en base64");
