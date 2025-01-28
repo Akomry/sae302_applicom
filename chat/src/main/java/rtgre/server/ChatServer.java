@@ -2,6 +2,7 @@ package rtgre.server;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import rtgre.chat.ChatController;
 import rtgre.chat.net.ChatClient;
 import rtgre.modeles.*;
 
@@ -28,7 +29,7 @@ public class ChatServer {
 
     static {
         try {
-            InputStream is = ChatServer.class.getClassLoader()
+            InputStream is = ChatController.class
                     .getResource("logging.properties").openStream();
             LogManager.getLogManager().readConfiguration(is);
         } catch (Exception e) {

@@ -16,15 +16,13 @@ import java.util.logging.Logger;
 public class ChatApplication extends Application {
     public static final Logger LOGGER = Logger.getLogger(ChatApplication.class.getCanonicalName());
 
-    public class EssaiLogger {
-        static {
-            try {
-                InputStream is = EssaiLogger.class.getClassLoader()
-                        .getResource("logging.properties").openStream();
-                LogManager.getLogManager().readConfiguration(is);
-            } catch (Exception e) {
-                LOGGER.log(Level.INFO, "Cannot read configuration file", e);
-            }
+    static {
+        try {
+            InputStream is = ChatApplication.class
+                    .getResource("logging.properties").openStream();
+            LogManager.getLogManager().readConfiguration(is);
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO, "Cannot read configuration file", e);
         }
     }
 

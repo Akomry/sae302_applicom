@@ -10,7 +10,9 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -19,6 +21,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import net.synedra.validatorfx.Check;
 import net.synedra.validatorfx.TooltipWrapper;
@@ -98,6 +101,7 @@ public class ChatController implements Initializable {
         loginTextField.disableProperty().bind(connectionButton.selectedProperty());
         hostComboBox.disableProperty().bind(connectionButton.selectedProperty());
 
+        hostAddMenuItem.setOnAction(this::handleHostAdd);
         avatarMenuItem.setOnAction(this::handleAvatarChange);
         avatarImageView.setOnMouseClicked(this::handleAvatarChange);
         sendButton.setOnAction(this::onActionSend);
@@ -126,6 +130,39 @@ public class ChatController implements Initializable {
         sendButton.disableProperty().bind(canSendCondition);
         messageTextField.disableProperty().bind(canSendCondition);
 
+    }
+
+    private void handleHostAdd(ActionEvent actionEvent) {
+        try {
+            ChatHostAddController controller = showNewStage("Add host", "chathostadd-view.fxml");
+            if (controller.isOk()) {
+                hostComboBox.getItems().add(controller.hostTextField.getText());
+                hostComboBox.setValue(controller.hostTextField.getText());
+            }
+        } catch (IOException e) {
+            LOGGER.warning("Impossible d'ouvrir la fenêtre de dialogue: fxml introuvable \n" + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Ouvre une fenêtre modale et attend qu'elle se ferme.
+     *
+     * @param title titre de la fenêtre
+     * @param fxmlFileName nom du fichier FXML décrivant l'interface graphique
+     * @return l'objet contrôleur associé à la fenêtre
+     * @throws IOException si le fichier FXML n'est pas trouvé dans les ressources
+     */
+    public <T> T showNewStage(String title, String fxmlFileName) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource(fxmlFileName));
+        Scene scene = new Scene(fxmlLoader.load());
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(title);
+        stage.setResizable(false);
+        stage.setScene(scene);
+        stage.showAndWait();
+        return fxmlLoader.getController();
     }
 
     private void initRoomListView() {
