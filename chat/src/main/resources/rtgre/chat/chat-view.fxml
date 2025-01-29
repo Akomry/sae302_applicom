@@ -1,23 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" minHeight="400.0" minWidth="600.0" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rtgre.chat.ChatController">
+<VBox alignment="CENTER" minHeight="400.0" minWidth="600.0" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="rtgre.chat.ChatController">
    <children>
       <MenuBar VBox.vgrow="NEVER">
         <menus>
-          <Menu mnemonicParsing="false" text="Edit">
+          <Menu mnemonicParsing="false" text="%edit">
             <items>
-              <MenuItem fx:id="hostAddMenuItem" mnemonicParsing="false" text="Add host" />
-                  <MenuItem fx:id="avatarMenuItem" mnemonicParsing="false" text="Change avatar" />
+              <MenuItem fx:id="hostAddMenuItem" mnemonicParsing="false" text="%addHost" />
+                  <MenuItem fx:id="avatarMenuItem" mnemonicParsing="false" text="%changeAvatar" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Help">
+          <Menu mnemonicParsing="false" text="%help">
             <items>
-              <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="About" />
+              <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="%about" />
             </items>
           </Menu>
         </menus>
@@ -34,9 +48,9 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Server :" GridPane.hgrow="NEVER" />
-            <Label text="Login :" GridPane.hgrow="NEVER" GridPane.rowIndex="1" />
-            <ComboBox fx:id="hostComboBox" maxWidth="1.7976931348623157E308" promptText="Choose host..." GridPane.columnIndex="2" GridPane.hgrow="ALWAYS">
+            <Label text="%server" GridPane.hgrow="NEVER" />
+            <Label text="%login" GridPane.hgrow="NEVER" GridPane.rowIndex="1" />
+            <ComboBox fx:id="hostComboBox" maxWidth="1.7976931348623157E308" promptText="localhost:2024" GridPane.columnIndex="2" GridPane.hgrow="ALWAYS">
                <GridPane.margin>
                   <Insets bottom="5.0" top="5.0" />
                </GridPane.margin>
@@ -46,7 +60,7 @@
                   <Insets bottom="5.0" top="5.0" />
                </GridPane.margin>
             </TextField>
-            <ToggleButton fx:id="connectionButton" maxHeight="1.7976931348623157E308" mnemonicParsing="false" prefWidth="100.0" text="Connection" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowSpan="2">
+            <ToggleButton fx:id="connectionButton" maxHeight="1.7976931348623157E308" mnemonicParsing="false" prefWidth="100.0" text="%connect" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowSpan="2">
                <GridPane.margin>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </GridPane.margin>
@@ -70,7 +84,7 @@
       </SplitPane>
       <HBox>
          <children>
-            <Label text="Message :">
+            <Label text="%message">
                <padding>
                   <Insets bottom="5.0" left="5.0" top="5.0" />
                </padding>
@@ -86,7 +100,7 @@
                   <Insets bottom="5.0" right="5.0" top="5.0" />
                </HBox.margin>
             </TextField>
-            <Button fx:id="sendButton" mnemonicParsing="false" text="Send">
+            <Button fx:id="sendButton" mnemonicParsing="false" text="%send">
                <padding>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
@@ -99,10 +113,10 @@
       <Separator prefWidth="200.0" />
       <HBox VBox.vgrow="NEVER">
          <children>
-            <Label text="Status : " />
-            <Label fx:id="statusLabel" text="Not connected" />
+            <Label text="%status" />
+            <Label fx:id="statusLabel" text="%disconnected" />
             <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
-            <Label fx:id="dateTimeLabel" text="Today" />
+            <Label fx:id="dateTimeLabel" text="%dateTime" />
          </children>
       </HBox>
    </children>

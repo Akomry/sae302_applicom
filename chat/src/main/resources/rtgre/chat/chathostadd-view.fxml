@@ -21,7 +21,7 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Host (IP:port)" />
+            <Label text="%host" />
             <TextField fx:id="hostTextField" prefWidth="200.0" GridPane.columnIndex="1" />
          </children>
          <padding>
@@ -33,10 +33,10 @@
       </GridPane>
       <HBox alignment="TOP_CENTER" spacing="10.0">
          <children>
-            <Button fx:id="resetButton" mnemonicParsing="false" prefWidth="100.0" text="Reset" />
+            <Button fx:id="resetButton" mnemonicParsing="false" prefWidth="100.0" text="%reset" />
             <HBox fx:id="submitWrapper">
                <children>
-                  <Button fx:id="submitButton" mnemonicParsing="false" prefWidth="100.0" text="Submit" />
+                  <Button fx:id="submitButton" mnemonicParsing="false" prefWidth="100.0" text="%submit" />
                </children>
             </HBox>
          </children>

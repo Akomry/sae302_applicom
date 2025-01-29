@@ -26,17 +26,19 @@ public class ChatHostAddController implements Initializable {
     private boolean ok = false;
     public static final Pattern HOST_PORT_REGEX = Pattern.compile("^([-.a-zA-Z0-9]+)(?::([0-9]{1,5}))?$");
     private Validator validatorHost = new Validator();
+    private ResourceBundle i18nBundle;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         submitButton.setOnAction(this::onActionSubmit);
         resetButton.setOnAction(this::onActionReset);
+        this.i18nBundle = resourceBundle;
 
         submitButton.disableProperty().bind(validatorHost.containsErrorsProperty());
         TooltipWrapper<Button> submitWrapper = new TooltipWrapper<>(
                 submitButton,
                 validatorHost.containsErrorsProperty(),
-                Bindings.concat("Cannot submit:\n", validatorHost.createStringBinding())
+                Bindings.concat(i18nBundle.getString("cannotSubmit"), validatorHost.createStringBinding())
         );
         this.submitWrapper.getChildren().add(submitWrapper);
 
@@ -45,13 +47,12 @@ public class ChatHostAddController implements Initializable {
                 .withMethod(this::checkHost)
                 .decorates(hostTextField)
                 .immediate();
-
     }
 
     private void checkHost(Check.Context context) {
         String host = context.get("host");
         if (!HOST_PORT_REGEX.matcher(host).matches()) {
-            context.error("Host should be a valid IP address or name with potentially port number");
+            context.error(i18nBundle.getString("hostError"));
         }
     }
 

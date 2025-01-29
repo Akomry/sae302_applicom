@@ -95,6 +95,7 @@ public class ChatClient extends ClientTCP {
         } catch (IOException e) {
             LOGGER.severe("[%s] %s".formatted(ipPort, e));
             connected = false;
+            Platform.runLater(() -> listener.connectionButton.setSelected(false));
         } finally {
             close();
         }

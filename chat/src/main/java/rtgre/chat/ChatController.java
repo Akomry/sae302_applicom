@@ -77,6 +77,7 @@ public class ChatController implements Initializable {
     private PostVector postVector;
     private RoomMap roomMap = new RoomMap();
     private ObservableList<Room> roomObservableList = FXCollections.observableArrayList();
+    private ResourceBundle i18nBundle;
 
 
     @Override
@@ -84,6 +85,8 @@ public class ChatController implements Initializable {
         LOGGER.info("Initialisation de l'interface graphique");
         Image image = new Image(Objects.requireNonNull(ChatController.class.getResourceAsStream("anonymous.png")));
         this.avatarImageView.setImage(image);
+        this.i18nBundle = resourceBundle;
+
 
         Thread dateTimeLoop = new Thread(this::dateTimeLoop);
         dateTimeLoop.setDaemon(true);
@@ -94,7 +97,7 @@ public class ChatController implements Initializable {
         hostComboBox.setValue("localhost:2024");
         hostComboBox.setOnAction(this::statusNameUpdate);
 
-        statusLabel.setText("Disconnected");
+        statusLabel.setText(i18nBundle.getString("disconnected"));
 
         connectionButton.disableProperty().bind(validatorLogin.containsErrorsProperty());
         connectionButton.selectedProperty().addListener(this::handleConnection);
@@ -134,7 +137,7 @@ public class ChatController implements Initializable {
 
     private void handleHostAdd(ActionEvent actionEvent) {
         try {
-            ChatHostAddController controller = showNewStage("Add host", "chathostadd-view.fxml");
+            ChatHostAddController controller = showNewStage(i18nBundle.getString("addHost"), "chathostadd-view.fxml");
             if (controller.isOk()) {
                 hostComboBox.getItems().add(controller.hostTextField.getText());
                 hostComboBox.setValue(controller.hostTextField.getText());
@@ -154,7 +157,7 @@ public class ChatController implements Initializable {
      * @throws IOException si le fichier FXML n'est pas trouvé dans les ressources
      */
     public <T> T showNewStage(String title, String fxmlFileName) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource(fxmlFileName));
+        FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource(fxmlFileName), i18nBundle);
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
@@ -196,7 +199,7 @@ public class ChatController implements Initializable {
         try {
             FileChooser fileChooser = new FileChooser();
             Stage stage = (Stage) avatarImageView.getScene().getWindow();
-            fileChooser.setTitle("Select Avatar");
+            fileChooser.setTitle(i18nBundle.getString("changeAvatar"));
             fileChooser.getExtensionFilters().addAll(
                     new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg")
             );
@@ -230,17 +233,18 @@ public class ChatController implements Initializable {
                 initPostListView();
                 clearLists();
                 contactMap.add(this.contact);
-                this.contact.setConnected(true);
 
                 client.sendAuthEvent(contact);
+                this.contact.setConnected(true);
                 client.sendListRoomEvent();
                 client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.LIST_CONTACTS, new JSONObject()));
                 client.sendEvent(new rtgre.modeles.Event(rtgre.modeles.Event.CONT, contact.toJsonObject()));
                 initContactListView();
                 initPostListView();
-                this.statusLabel.setText("Connected to %s@%s:%s".formatted(this.contact.getLogin(), host, port));
-            } catch (IOException e) {
-                new Alert(Alert.AlertType.ERROR, "Erreur de connexion").showAndWait();
+                this.statusLabel.setText("%s%s@%s:%s".formatted(i18nBundle.getString("connected"), this.contact.getLogin(), host, port));
+                this.connectionButton.setText(i18nBundle.getString("disconnect"));
+            } catch (Exception e) {
+                new Alert(Alert.AlertType.ERROR, i18nBundle.getString("connectionError")).showAndWait();
                 connectionButton.setSelected(false);
             }
         } else if (!connectionButton.isSelected()) {
@@ -249,7 +253,8 @@ public class ChatController implements Initializable {
             if (this.client.isConnected()) {
                 this.contact.setConnected(false);
             }
-            statusLabel.setText("Disconnected");
+            statusLabel.setText(i18nBundle.getString("disconnected"));
+            this.connectionButton.setText(i18nBundle.getString("connect"));
         }
     }
 
@@ -265,10 +270,10 @@ public class ChatController implements Initializable {
     private void checkLogin(Check.Context context) {
         String login = context.get("login");
         if (!LOGIN_PATTERN.matcher(login).matches()) {
-            context.error("Format de login non respecté");
+            context.error(i18nBundle.getString("loginError"));
         }
         if (login.equals("system")) {
-            context.error("Le login ne peut pas être system");
+            context.error(i18nBundle.getString("systemError"));
         }
 
 
@@ -296,7 +301,7 @@ public class ChatController implements Initializable {
         try {
             contactsListView.setCellFactory(contactListView -> new ContactListViewCell());
             contactsListView.setItems(contactObservableList);
-            File avatars = new File(getClass().getResource("avatars.png").toURI());
+            //File avatars = new File(getClass().getResource("avatars.png").toURI());
             //Contact fifi = new Contact("fifi", true, avatars);
             //contactObservableList.add(fifi);
             //contactMap.add(fifi);
@@ -362,7 +367,7 @@ public class ChatController implements Initializable {
         roomSelected.getUnreadCount().setUnreadCount(0);
         roomsListView.refresh();
 
-        Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans le salon " + roomSelected);
+        Post postSys = new Post("system", loginTextField.getText(), i18nBundle.getString("systemHelloRoom") + roomSelected);
         postsObservableList.clear();
         postsObservableList.add(postSys);
         client.sendEvent(new rtgre.modeles.Event("JOIN", new JSONObject().put("room", roomSelected.getRoomName())));
@@ -381,7 +386,7 @@ public class ChatController implements Initializable {
 
         contactSelected.getUnreadCount().setUnreadCount(0);
 
-        Post postSys = new Post("system", loginTextField.getText(), "Bienvenue dans la discussion avec " + contactSelected.getLogin());
+        Post postSys = new Post("system", loginTextField.getText(), i18nBundle.getString("systemHelloContact") + contactSelected.getLogin());
         postsObservableList.clear();
         postsObservableList.add(postSys);
         client.sendListPostEvent(0, contactSelected.getLogin());
@@ -498,4 +503,7 @@ public class ChatController implements Initializable {
         }
     }
 
+    public void errorAlert() {
+        new Alert(Alert.AlertType.ERROR, i18nBundle.getString("connectionError")).showAndWait();
+    }
 }
