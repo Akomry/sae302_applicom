@@ -58,6 +58,7 @@ public class ChatServer {
         roomMap = new RoomMap();
         contactMap.loadDefaultContacts();
         roomMap.loadDefaultRooms();
+        roomMap.setLoginSets();
     }
 
     public void close() throws IOException {
@@ -305,10 +306,12 @@ public class ChatServer {
         private void doListRoom(JSONObject content) {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 for (Room room: roomMap.values()) {
-                    try {
-                        send(new Event("ROOM", room.toJsonObject()).toJson());
-                    } catch (IOException e) {
-                        throw new IllegalStateException();
+                    if (room.getLoginSet().contains(user.getLogin())) {
+                        try {
+                            send(new Event("ROOM", room.toJsonObject()).toJson());
+                        } catch (IOException e) {
+                            throw new IllegalStateException();
+                        }
                     }
                 }
             }

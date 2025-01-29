@@ -33,6 +33,10 @@ public class Room {
         return this.roomName;
     }
 
+    public void setLoginSet (HashSet<String> loginSet) {
+        this.loginSet = loginSet;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
