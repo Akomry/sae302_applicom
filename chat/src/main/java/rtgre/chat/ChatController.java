@@ -502,8 +502,4 @@ public class ChatController implements Initializable {
             LOGGER.info(contactMap.toString());
         }
     }
-
-    public void errorAlert() {
-        new Alert(Alert.AlertType.ERROR, i18nBundle.getString("connectionError")).showAndWait();
-    }
 }

@@ -6,6 +6,7 @@ module rtgre.chat {
     requires javafx.swing;
     requires net.synedra.validatorfx;
     requires org.json;
+    requires java.sql;
 
 
     opens rtgre.chat to javafx.fxml;

@@ -1,5 +1,6 @@
 package rtgre.server;
 
+import javafx.scene.chart.PieChart;
 import org.json.JSONException;
 import org.json.JSONObject;
 import rtgre.chat.ChatController;
@@ -26,6 +27,7 @@ public class ChatServer {
     private PostVector postVector;
     private ContactMap contactMap;
     private RoomMap roomMap;
+    private DatabaseApi database;
 
     static {
         try {
@@ -59,6 +61,7 @@ public class ChatServer {
         contactMap.loadDefaultContacts();
         roomMap.loadDefaultRooms();
         roomMap.setLoginSets();
+        postVector.loadPosts();
     }
 
     public void close() throws IOException {
@@ -358,6 +361,11 @@ public class ChatServer {
                     sendEventToContact(contactMap.getContact(post.getTo()), postEvent);
 
                     postVector.add(post);
+
+                    database = new DatabaseApi();
+                    database.addPost(post);
+                    database.close();
+
                     LOGGER.info("Fin de doMessage:dm");
                 } else {
                     Post post = new Post(
