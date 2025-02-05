@@ -69,6 +69,7 @@ public class ChatController implements Initializable {
     public Label statusLabel;
     public Label dateTimeLabel;
     public Contact contact;
+    public SplitPane senderSplitPane;
     private ContactMap contactMap = new ContactMap();
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
     private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
@@ -101,6 +102,13 @@ public class ChatController implements Initializable {
             }
             hostComboBox.setValue(!properties.getProperty("lasthost").isEmpty() ? properties.getProperty("lasthost") : hostComboBox.getItems().get(0));
             loginTextField.setText(!properties.getProperty("login").isEmpty() ? properties.getProperty("login") : "");
+            if (!properties.getProperty("split2").isEmpty()) {
+                exchangeSplitPane.setDividerPositions(Double.parseDouble(properties.getProperty("split2")));
+            }
+            if (!properties.getProperty("split1").isEmpty()) {
+                exchangeSplitPane.setDividerPositions(Double.parseDouble(properties.getProperty("split2")));
+            }
+
         } catch (IOException e) {
             LOGGER.warning("Impossible de charger le fichier de configuration! Configuration par défaut chargée");
             System.out.println(e.getMessage());

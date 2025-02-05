@@ -9,10 +9,7 @@ import javafx.stage.Stage;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -53,8 +50,6 @@ public class ChatApplication extends Application {
             if (!properties.getProperty("width").isEmpty() && !properties.getProperty("height").isEmpty()) {
                 stage.setWidth(Double.parseDouble(properties.getProperty("width")));
                 stage.setHeight(Double.parseDouble(properties.getProperty("height")));
-
-
             }
             if (properties.getProperty("posx").isEmpty() || properties.getProperty("height").isEmpty()) {
                 stage.centerOnScreen();
@@ -77,7 +72,8 @@ public class ChatApplication extends Application {
             properties.setProperty("posx", String.valueOf(stage.getX()));
             properties.setProperty("posy", String.valueOf(stage.getY()));
 
-
+            properties.setProperty("split1", String.valueOf(controller.senderSplitPane.getDividerPositions()[0]));
+            properties.setProperty("split2", String.valueOf(controller.exchangeSplitPane.getDividerPositions()[0]));
             LOGGER.finest(properties.toString());
             properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
         } catch (IOException e) {
