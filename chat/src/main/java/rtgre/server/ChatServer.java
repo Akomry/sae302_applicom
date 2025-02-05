@@ -16,12 +16,12 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import static rtgre.chat.ChatApplication.LOGGER;
+
 /**
  * Programme serveur qui renvoie les chaines de caractères lues jusqu'à recevoir le message "fin"
  */
 public class ChatServer {
-
-    private static final Logger LOGGER = Logger.getLogger(ChatServer.class.getCanonicalName());
 
     private Vector<ChatClientHandler> clientList;
     private PostVector postVector;
