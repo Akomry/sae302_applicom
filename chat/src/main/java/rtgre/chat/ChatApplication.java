@@ -6,9 +6,11 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -23,6 +25,9 @@ public class ChatApplication extends Application {
             InputStream is = ChatApplication.class
                     .getResource("logging.properties").openStream();
             LogManager.getLogManager().readConfiguration(is);
+            if (!Files.exists(new File("chat/target/").toPath())) {
+                Files.createDirectory(new File("target").toPath());
+            }
         } catch (Exception e) {
             LOGGER.log(Level.INFO, "Cannot read configuration file", e);
         }
