@@ -6,10 +6,12 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -17,7 +19,8 @@ import java.util.logging.Logger;
 
 public class ChatApplication extends Application {
     public static final Logger LOGGER = Logger.getLogger(ChatApplication.class.getCanonicalName());
-
+    private ChatController controller;
+    private Stage stage;
     static {
         try {
             InputStream is = ChatApplication.class
@@ -41,6 +44,45 @@ public class ChatApplication extends Application {
         stage.setMinHeight(400);
         stage.setScene(scene);
         stage.show();
+        this.controller = fxmlLoader.getController();
+        this.stage = stage;
+
+        try {
+            Properties properties = new Properties();
+            properties.load(getClass().getResourceAsStream("config.properties"));
+            if (!properties.getProperty("width").isEmpty() && !properties.getProperty("height").isEmpty()) {
+                stage.setWidth(Double.parseDouble(properties.getProperty("width")));
+                stage.setHeight(Double.parseDouble(properties.getProperty("height")));
+
+
+            }
+            if (properties.getProperty("posx").isEmpty() || properties.getProperty("height").isEmpty()) {
+                stage.centerOnScreen();
+            } else {
+                stage.setX(Double.parseDouble(properties.getProperty("posx")));
+                stage.setY(Double.parseDouble(properties.getProperty("posy")));
+            }
+        } catch (IOException e) {
+            LOGGER.warning("Cannot load stage config!");
+        }
+    }
+
+    @Override
+    public void stop() {
+        try {
+            Properties properties = new Properties();
+            properties.load(getClass().getResourceAsStream("config.properties"));
+            properties.setProperty("width", String.valueOf(stage.getWidth()));
+            properties.setProperty("height", String.valueOf(stage.getHeight()));
+            properties.setProperty("posx", String.valueOf(stage.getX()));
+            properties.setProperty("posy", String.valueOf(stage.getY()));
+
+
+            LOGGER.finest(properties.toString());
+            properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
+        } catch (IOException e) {
+            LOGGER.warning("Cannot store stage info in config!");
+        }
     }
 
     public static void main(String[] args) {
