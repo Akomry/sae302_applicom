@@ -71,7 +71,7 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </VBox.margin>
       </GridPane>
-      <SplitPane fx:id="exchangeSplitPane" dividerPositions="0.9" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+      <SplitPane fx:id="exchangeSplitPane" dividerPositions="0.9" VBox.vgrow="ALWAYS">
          <items>
             <ListView fx:id="postListView" prefHeight="200.0" prefWidth="348.0" />
             <SplitPane fx:id="senderSplitPane" dividerPositions="0.1" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
