@@ -176,4 +176,16 @@ public class Contact {
         return null;
     }
 
+    public static BufferedImage base64ToBufferedImage(String avatar64) {
+        byte[] bytes64 = Base64.getDecoder().decode(avatar64);
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes64));
+            return image;
+        } catch (IOException e) {
+            LOGGER.severe("Impossible de convertir le base64 en image");
+        }
+        return null;
+    }
+
+
 }

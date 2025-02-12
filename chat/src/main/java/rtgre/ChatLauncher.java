@@ -18,6 +18,8 @@ public class ChatLauncher {
                 ChatApplication.main(args);
             }
         } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             System.out.println("test2");
             ChatApplication.main(args);
         }

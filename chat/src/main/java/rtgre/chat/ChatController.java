@@ -36,12 +36,12 @@ import rtgre.modeles.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Date;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,6 +69,7 @@ public class ChatController implements Initializable {
     public Label statusLabel;
     public Label dateTimeLabel;
     public Contact contact;
+    public SplitPane senderSplitPane;
     private ContactMap contactMap = new ContactMap();
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
     private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
@@ -78,7 +79,8 @@ public class ChatController implements Initializable {
     private RoomMap roomMap = new RoomMap();
     private ObservableList<Room> roomObservableList = FXCollections.observableArrayList();
     private ResourceBundle i18nBundle;
-
+    private Properties properties = new Properties();
+    private Vector<String> hostlist;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -87,14 +89,41 @@ public class ChatController implements Initializable {
         this.avatarImageView.setImage(image);
         this.i18nBundle = resourceBundle;
 
+        try {
+            InputStream in = ChatController.class.getResourceAsStream("config.properties");
+            System.out.println(ChatController.class.getResource("config.properties").getPath());
+            properties.load(in);
+            if (contact != null) {
+                this.contact.setAvatar(Contact.base64ToImage(properties.getProperty("avatar")));
+            }
+            this.avatarImageView.setImage(SwingFXUtils.toFXImage(Contact.base64ToBufferedImage(properties.getProperty("avatar")), null));
+            for (String host : (String[]) properties.getProperty("hosts").split(",")) {
+                host = host.replace("[", "").replace("]", "").replace(" ", "");
+                hostComboBox.getItems().addAll(host);
+            }
+            hostComboBox.setValue(!properties.getProperty("lasthost").isEmpty() ? properties.getProperty("lasthost") : hostComboBox.getItems().get(0));
+            loginTextField.setText(!properties.getProperty("login").isEmpty() ? properties.getProperty("login") : "");
+            if (!properties.getProperty("split2").isEmpty()) {
+                exchangeSplitPane.setDividerPositions(Double.parseDouble(properties.getProperty("split2")));
+            }
+            if (!properties.getProperty("split1").isEmpty()) {
+                exchangeSplitPane.setDividerPositions(Double.parseDouble(properties.getProperty("split2")));
+            }
+
+        } catch (IOException e) {
+            LOGGER.warning("Impossible de charger le fichier de configuration! Configuration par défaut chargée");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            LOGGER.warning("Impossible de charger le fichier de configuration! Configuration par défaut chargée");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 
         Thread dateTimeLoop = new Thread(this::dateTimeLoop);
         dateTimeLoop.setDaemon(true);
         dateTimeLoop.start();
 
-        hostComboBox.getItems().addAll("localhost:2024");
-        hostComboBox.getItems().addAll("localhost:2025");
-        hostComboBox.setValue("localhost:2024");
         hostComboBox.setOnAction(this::statusNameUpdate);
 
         statusLabel.setText(i18nBundle.getString("disconnected"));
@@ -141,6 +170,8 @@ public class ChatController implements Initializable {
             if (controller.isOk()) {
                 hostComboBox.getItems().add(controller.hostTextField.getText());
                 hostComboBox.setValue(controller.hostTextField.getText());
+                properties.setProperty("hosts", hostComboBox.getItems().toString());
+                properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
             }
         } catch (IOException e) {
             LOGGER.warning("Impossible d'ouvrir la fenêtre de dialogue: fxml introuvable \n" + e.getMessage());
@@ -206,12 +237,21 @@ public class ChatController implements Initializable {
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
                 avatarImageView.setImage(new Image(selectedFile.toURI().toString()));
-                contact.setAvatar(ImageIO.read(selectedFile));
+                if (contact != null) {
+                    contact.setAvatar(ImageIO.read(selectedFile));
+                }
+                properties.setProperty("avatar", Contact.imageToBase64(ImageIO.read(selectedFile)));
+                properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
+
             }
         } catch (IOException e) {
             LOGGER.warning("Impossible de lire l'image!");
         }
-        client.sendEvent(new rtgre.modeles.Event("CONT", this.contact.toJsonObject()));
+        try {
+            client.sendEvent(new rtgre.modeles.Event("CONT", this.contact.toJsonObject()));
+        } catch (Exception e) {
+            LOGGER.warning("Impossible d'envoyer l'évenement CONT! L'utilisateur est-il connecté?");
+        }
     }
 
 
@@ -243,6 +283,14 @@ public class ChatController implements Initializable {
                 initPostListView();
                 this.statusLabel.setText("%s%s@%s:%s".formatted(i18nBundle.getString("connected"), this.contact.getLogin(), host, port));
                 this.connectionButton.setText(i18nBundle.getString("disconnect"));
+
+                try {
+                    properties.setProperty("login", loginTextField.getText());
+                    properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
+                } catch (Exception e) {
+                    LOGGER.warning("Unable to store login in config!");
+                }
+
             } catch (Exception e) {
                 new Alert(Alert.AlertType.ERROR, i18nBundle.getString("connectionError")).showAndWait();
                 connectionButton.setSelected(false);
@@ -281,6 +329,13 @@ public class ChatController implements Initializable {
 
     private void statusNameUpdate(Event event) {
         statusLabel.setText("not connected to " + hostComboBox.getValue());
+
+        properties.setProperty("lasthost", hostComboBox.getValue());
+        try {
+            properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
+        } catch (IOException e) {
+            LOGGER.warning("Unable to write last host to config!");
+        }
     }
 
 

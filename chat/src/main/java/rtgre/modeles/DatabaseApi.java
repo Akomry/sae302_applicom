@@ -4,6 +4,7 @@ import javax.xml.transform.Result;
 import java.io.File;
 import java.sql.*;
 import java.util.UUID;
+import org.sqlite.JDBC;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
@@ -13,7 +14,7 @@ public class DatabaseApi {
 
     public DatabaseApi() {
         try {
-            this.con = DriverManager.getConnection("jdbc:sqlite:chat/src/main/resources/rtgre/chat/dbase.db");
+            this.con = DriverManager.getConnection("jdbc:sqlite:target/dbase.db");
             this.stmt = con.createStatement();
             initDB(con);
             LOGGER.info("Database connected!");
