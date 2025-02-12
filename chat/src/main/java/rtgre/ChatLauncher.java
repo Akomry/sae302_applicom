@@ -5,7 +5,14 @@ import rtgre.server.ChatServer;
 
 import java.io.IOException;
 
+/**
+ * Application pour lancer soit ChatServer, soit ChatApplication
+ */
 public class ChatLauncher {
+    /**
+     * Avec le paramètre "server" sur la ligne de commande, ChatServer, sinon lance ChatApplication
+     * @param args Paramètres de la ligne de commande
+     */
     public static void main(String[] args) {
         for (String arg : args) {
             System.out.println(arg);

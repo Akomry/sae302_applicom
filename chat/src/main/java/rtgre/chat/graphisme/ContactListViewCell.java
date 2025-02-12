@@ -30,7 +30,7 @@ public class ContactListViewCell extends ListCell<Contact> {
      * Callback déclenchée à chaque modification d'un objet d'une liste d'observable.
      *
      * @param contact Le contact à mettre à jour
-     * @param empty      La liste de cellule doit-elle être complètement remise à zéro ?
+     * @param empty La liste de cellule doit-elle être complètement remise à zéro ?
      */
     @Override
     protected void updateItem(Contact contact, boolean empty) {

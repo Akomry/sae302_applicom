@@ -23,11 +23,19 @@ import static rtgre.chat.ChatApplication.LOGGER;
  */
 public class ChatServer {
 
+    /** Liste des clients connectés */
     private Vector<ChatClientHandler> clientList;
+    /** Liste des messages */
     private PostVector postVector;
+    /** Annuaire des contacts */
     private ContactMap contactMap;
+    /** Liste des salons */
     private RoomMap roomMap;
+    /** Connexion à la base de données */
     private DatabaseApi database;
+    /** Socket passif en écoute */
+    private ServerSocket passiveSock;
+
 
     static {
         try {
@@ -39,23 +47,28 @@ public class ChatServer {
         }
     }
 
-
+    /**
+     * Le programme principal : instancie un serveur en écoute sur le port 2024 et le place en attente de clients.
+     * @param args Arguments du programme principal
+     * @throws IOException en cas de problème de connexion ou de base de données
+     */
     public static void main(String[] args) throws IOException {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new IOException("Cannot connect to database");
         }
         ChatServer server = new ChatServer(2024);
         //daisyConnect();
         server.acceptClients();
     }
 
-    /**
-     * Socket passif en écoute
-     */
-    private ServerSocket passiveSock;
 
+    /**
+     * Constructeur : initialisation du serveur, en écoute sur le port fourni
+     * @param port Le port de connexion
+     * @throws IOException si la connexion ne peut être établie
+     */
     public ChatServer(int port) throws IOException {
         passiveSock = new ServerSocket(port);
         LOGGER.info("Serveur en écoute " + passiveSock);
@@ -69,6 +82,26 @@ public class ChatServer {
         postVector.loadPosts();
     }
 
+    /**
+     * Getter de `PostVector`
+     * @return La liste des posts
+     */
+    public PostVector getPostVector() {
+        return postVector;
+    }
+
+    /**
+     * Getter de `roomMap`
+     * @return La liste des salons
+     */
+    public RoomMap getRoomMap() {
+        return roomMap;
+    }
+
+    /**
+     * Ferme la connexion du serveur, en fermant la connexion auprès de tous ses clients, puis en fermant son socket en écoute passive.
+     * @throws IOException si la connexion
+     */
     public void close() throws IOException {
         for (ChatClientHandler client : clientList) {
             client.close();
@@ -95,16 +128,28 @@ public class ChatServer {
         }
     }
 
+    /**
+     * Retire `client` de la liste des clients connectés `clientList`
+     * @param client client à retirer de la liste `clientList`
+     */
     public void removeClient(ChatClientHandler client) {
         clientList.remove(client);
         LOGGER.fine("Client [%s] retiré de la liste (%d clients connectés)"
                 .formatted(client.getIpPort(), clientList.size()));
     }
 
+    /**
+     * Getter de `clientList`
+     * @return La liste des clients
+     */
     public Vector<ChatClientHandler> getClientList() {
         return clientList;
     }
 
+    /**
+     * Getter de passiveSocket
+     * @return Le socket en écoute passive du serveur
+     */
     public ServerSocket getPassiveSocket() {
         return passiveSock;
     }
@@ -125,6 +170,11 @@ public class ChatServer {
         //client.echoLoop();
     }
 
+    /**
+     * Renvoie le client de connexion (objet ChatServer.ChatClientHandler) associé à un contact
+     * @param contact Le contact recherché
+     * @return Le client de connexion associé ou `null` si le contact n'existe pas
+     */
     public ChatClientHandler findClient(Contact contact) {
         for (ChatClientHandler user: clientList) {
             if (user.user.equals(contact)) {
@@ -134,6 +184,11 @@ public class ChatServer {
         return null;
     }
 
+    /**
+     * Envoi d'un évènement event à un contact donné, sous réserve qu'il soit connecté. Si l'envoi échoue, ferme la connexion avec le contact.
+     * @param contact Le contact destinataire
+     * @param event L'évènement à envoyer
+     */
     public void sendEventToContact(Contact contact, Event event) {
         ChatClientHandler user = findClient(contact);
         if (!(user == null)) {
@@ -146,6 +201,10 @@ public class ChatServer {
         }
     }
 
+    /**
+     * Envoi d'un évènement à tous les contacts connectés
+     * @param event L'évènement à envoyer
+     */
     public void sendEventToAllContacts(Event event) {
         for (Contact contact: contactMap.values()) {
             if (contact.isConnected()) {
@@ -154,17 +213,28 @@ public class ChatServer {
         }
     }
 
+    /**
+     * Getter de contactMap
+     * @return La liste des contacts
+     */
     public ContactMap getContactMap() {
         return contactMap;
     }
 
-    /** Temporaire : connecte   pour test */
+    /**
+     * Temporaire : connecte daisy pour test
+     * @throws IOException si la connexion ne peut être établie
+     */
     public static void daisyConnect() throws IOException {
         ChatClient client = new ChatClient("localhost", 2024, null);
         client.sendAuthEvent(new Contact("daisy", null));
     }
 
+    /**
+     * Gestion du dialogue avec un client TCP
+     */
     private class ChatClientHandler {
+        /** Message de fin d'une connexion */
         public static final String END_MESSAGE = "fin";
         /**
          * Socket connecté au client
@@ -182,7 +252,7 @@ public class ChatServer {
          * Chaine de caractères "ip:port" du client
          */
         private String ipPort;
-
+        /** Contact associé au client courant */
         private Contact user;
 
         /**
@@ -191,7 +261,7 @@ public class ChatServer {
          * {@link #in} (flux de caractères UTF-8 en entrée).
          *
          * @param sock socket connecté au client
-         * @throws IOException
+         * @throws IOException si la connexion ne peut être établie ou si les flux ne peuvent être récupérés
          */
         public ChatClientHandler(Socket sock) throws IOException {
             this.sock = sock;
@@ -225,6 +295,9 @@ public class ChatServer {
             close();
         }
 
+        /**
+         * Boucle de réception d'évènement : réceptionne les messages reçus et les délèguent à `handleEvent(java.lang.String)` pour les interpréter
+         */
         public void eventReceiveLoop() {
             try {
                 String message = null;
@@ -249,6 +322,13 @@ public class ChatServer {
             close();
         }
 
+        /**
+         * Traitement d'un évènement. Ventile vers les méthodes traitant chaque type d'évènement.
+         * @param message objet évènement sous la forme d'une chaine JSON brute de réception
+         * @return `false` si l'évènement est de type Event.QUIT , `true` pour tous les autres types.
+         * @throws JSONException si l'objet JSON n'est pas conforme
+         * @throws IllegalStateException si l'authentification n'est pas effectuée
+         */
         private boolean handleEvent(String message) throws JSONException, IllegalStateException {
             Event event = Event.fromJson(message);
             if (event.getType().equals(Event.AUTH)) {
@@ -292,6 +372,10 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Met à jour un Post en fonction de son UUID
+         * @param content le contenu d'un évènement "POST"
+         */
         private void doPost(JSONObject content) {
             database = new DatabaseApi();
             database.removePost(Post.fromJson(content));
@@ -303,6 +387,10 @@ public class ChatServer {
             LOGGER.info("didpost");
         }
 
+        /**
+         * Met à jour un contact et envoie à tous les autres utilisateurs la mise à jour
+         * @param content Le contenu d'un évènement "CONT"
+         */
         private void doCont(JSONObject content) {
             if (user.isConnected()) {
                 sendEventToAllContacts(new Event("CONT", content));
@@ -310,6 +398,10 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Gère l'arrivée à un utilisateur dans un salon donné dans le contenu du message.
+         * @param content Le contenu d'un évènement "JOIN"
+         */
         private void doJoin(JSONObject content) {
             if (content.getString("room").isEmpty()) {
                 user.setCurrentRoom(null);
@@ -326,6 +418,10 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Gère la demande d'envoi de la liste des salons : récupère tous les posts dont l'utilisateur est autorisé à accéder, puis les envoie un par un au client via des évènements "ROOM".
+         * @param content Le contenu d'un évènement "LSTR"
+         */
         private void doListRoom(JSONObject content) {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 for (Room room: roomMap.values()) {
@@ -340,6 +436,12 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Gère la demande d'envoi de la liste des posts : récupère tous les posts ayant trait au login ou au salon indiqué dans content et étant postérieur au timestamp indiqué dans content, puis les envoie un par un au client via des évènements "POST".
+         * @param content Le contenu d'un évènement "LSTP"
+         * @throws JSONException si le format JSON n'est pas respecté
+         * @throws IllegalStateException si le login ou le salon demandé n'existent pas
+         */
         private void doListPost(JSONObject content) throws JSONException, IllegalStateException {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 if (!contactMap.containsKey(content.getString("select")) && !roomMap.containsKey(content.getString("select"))) {
@@ -365,6 +467,12 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Gère la réception d'un message, en créant le Post associé et en l'envoyant à son destinataire privé ou aux membres d'un salon de discussion public
+         * @param content Le contenu JSON représentant un message
+         * @throws JSONException si le format JSON n'est pas respecté
+         * @throws IllegalStateException si un évènement destiné à un contact ne peut être envoyé
+         */
         private void doMessage(JSONObject content) throws JSONException, IllegalStateException {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 if (content.getString("to").equals(user.getLogin()) ||
@@ -408,6 +516,12 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Gère la demande de la liste des contacts : les contacts sont envoyés un par un au client sous la forme d'évènement "CONT"
+         * @param content Le contenu de la demande de la liste des contacts
+         * @throws JSONException si le format JSON n'est pas respecté
+         * @throws IllegalStateException si un évènement destiné à un contact ne peut être envoyé
+         */
         private void doListContact(JSONObject content) throws JSONException, IllegalStateException {
             for (Contact contact: contactMap.values()) {
                 if (contactMap.getContact(user.getLogin()).isConnected()) {
@@ -416,7 +530,18 @@ public class ChatServer {
             }
         }
 
-        private void doLogin(JSONObject content) {
+        /**
+         * Gère l'authentification d'un client en :
+         * *    récupérant son login dans content.
+         * *    en vérifiant qu'il fait partie des contacts autorisés dans l'annuaire des contacts.
+         * *    en modifiant son état de connexion dans l'annuaire des contacts.
+         * *    en informant les autres clients de la connexion.
+         * Si aucun login n'est fourni, si le client n'est pas autorisé à se connecter, ou si le client s'authentifie alors qu'il est déjà connecté, une exception IllegalStateException est levée.
+         * @param content Le contenu de la demande
+         * @throws JSONException si le format JSON n'est pas respecté
+         * @throws IllegalStateException si l'utilisateur n'est pas autorisé à se connecter ou s'il est déjà connecté
+         */
+        private void doLogin(JSONObject content) throws JSONException, IllegalStateException {
             String login = content.getString("login");
             if (login.isEmpty()) {
                 LOGGER.warning("Aucun login fourni");
@@ -436,6 +561,11 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Envoie une chaine de caractères
+         * @param message Chaine de caractères à transmettre
+         * @throws IOException lorsqu'une erreur sur le flux de sortie est détectée
+         */
         public void send(String message) throws IOException {
             LOGGER.finest("send: %s".formatted(message));
             out.println(message);
@@ -444,10 +574,19 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Getter de ipPort
+         * @return L'IP et le port du client
+         */
         public String getIpPort() {
             return ipPort;
         }
 
+        /**
+         * Envoie un message à tous les autres clients que le client courant
+         * @param fromClient Le client courant
+         * @param message Le message à envoyer
+         */
         public void sendAllOtherClients(ChatClientHandler fromClient, String message) {
             for (ChatClientHandler client : clientList) {
                 if (!client.equals(fromClient)) {
@@ -463,6 +602,11 @@ public class ChatServer {
             }
         }
 
+        /**
+         * Attente d'une chaine de caractères en entrée.
+         * @return chaine de caractères reçue
+         * @throws IOException lorsque la fin du flux est atteinte
+         */
         public String receive() throws IOException {
             String message = in.readLine();
             LOGGER.info("receive: %s".formatted(message));
@@ -472,6 +616,9 @@ public class ChatServer {
             return message;
         }
 
+        /**
+         * Ferme la connexion TCP
+         */
         public void close() {
             LOGGER.info("[%s] Fermeture de la connexion".formatted(ipPort));
             try {

@@ -7,8 +7,16 @@ import java.util.Vector;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
+/**
+ * Classe modélisant une liste de posts
+ */
 public class PostVector extends Vector<Post> {
 
+    /**
+     * Extrait un post en fonction de son identifiant
+     * @param uuid L'identifiant du post recherché
+     * @return Le post correspondant
+     */
     public Post getPostById(UUID uuid) {
         for (Post post : this) {
             if (post.id == uuid) {
@@ -18,6 +26,11 @@ public class PostVector extends Vector<Post> {
         return null;
     }
 
+    /**
+     * Renvoie la liste des posts, qui ont été créé à partir d'un timestamp donné
+     * @param timestamp Le timestamp à partir duquel extraire les posts
+     * @return La liste des posts extraits
+     */
     public Vector<Post> getPostsSince(long timestamp) {
         Vector<Post> posts = new Vector<>();
         for (Post post : this) {
@@ -28,6 +41,9 @@ public class PostVector extends Vector<Post> {
         return posts;
     }
 
+    /**
+     * Charge la liste des posts depuis la base de données
+     */
     public void loadPosts() {
         try {
             DatabaseApi database = new DatabaseApi();
