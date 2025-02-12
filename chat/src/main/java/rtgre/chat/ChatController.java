@@ -16,6 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -61,7 +62,7 @@ public class ChatController implements Initializable {
     public ToggleButton connectionButton;
     public ImageView avatarImageView;
     public SplitPane exchangeSplitPane;
-    public ListView postListView;
+    public ListView<Post> postListView;
     public ListView<Room> roomsListView;
     public ListView<Contact> contactsListView;
     public TextField messageTextField;
@@ -81,6 +82,11 @@ public class ChatController implements Initializable {
     private ResourceBundle i18nBundle;
     private Properties properties = new Properties();
     private Vector<String> hostlist;
+    private ContextMenu contextMenu = new ContextMenu();
+    private MenuItem removeMenuItem;
+    private MenuItem editMenuItem;
+    private MenuItem cancelMenuItem;
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -139,6 +145,9 @@ public class ChatController implements Initializable {
         sendButton.setOnAction(this::onActionSend);
         messageTextField.setOnAction(this::onActionSend);
 
+        initContextMenu();
+        postListView.setOnContextMenuRequested(this::handleContextMenu);
+
         initContactListView();
         initPostListView();
         initRoomListView();
@@ -162,6 +171,58 @@ public class ChatController implements Initializable {
         sendButton.disableProperty().bind(canSendCondition);
         messageTextField.disableProperty().bind(canSendCondition);
 
+    }
+
+    private void handleContextMenu(ContextMenuEvent e) {
+        if (postListView.getSelectionModel().getSelectedItem().getFrom().equals(contact.getLogin())) {
+            contextMenu.show(postListView, e.getScreenX(), e.getScreenY());
+        }
+    }
+
+    private void initContextMenu() {
+        this.removeMenuItem = new MenuItem();
+        this.editMenuItem = new MenuItem();
+        this.cancelMenuItem = new MenuItem();
+
+        removeMenuItem.setText("Remove message");
+        editMenuItem.setText("Edit message");
+        cancelMenuItem.setText("Cancel");
+
+        removeMenuItem.setOnAction(this::onMessageRemove);
+        editMenuItem.setOnAction(this::onMessageEdit);
+        cancelMenuItem.setOnAction(e -> contextMenu.hide());
+
+        contextMenu.getItems().addAll(removeMenuItem, editMenuItem, cancelMenuItem);
+    }
+
+    private void onMessageEdit(ActionEvent actionEvent) {
+        UUID postUUID = postListView.getSelectionModel().getSelectedItem().getId();
+        long timestamp = postListView.getSelectionModel().getSelectedItem().getTimestamp();
+        String from = postListView.getSelectionModel().getSelectedItem().getFrom();
+        String to = postListView.getSelectionModel().getSelectedItem().getTo();
+        try {
+            ModifyMessageController controller = showNewStage(i18nBundle.getString("messageEdit"), "modifymessage-view.fxml");
+
+            Post post = new Post(postUUID, timestamp, from, to, controller.hostTextField.getText());
+            client.sendPostEvent(post);
+            postVector.remove(postListView.getSelectionModel().getSelectedItem());
+            postsObservableList.remove(postListView.getSelectionModel().getSelectedItem());
+            postListView.refresh();
+
+        } catch (IOException e) {
+            LOGGER.warning("Can't open modify message view!");
+        }
+    }
+
+    private void onMessageRemove(ActionEvent actionEvent) {
+        UUID postUUID = postListView.getSelectionModel().getSelectedItem().getId();
+        long timestamp = postListView.getSelectionModel().getSelectedItem().getTimestamp();
+        String from = postListView.getSelectionModel().getSelectedItem().getFrom();
+        String to = postListView.getSelectionModel().getSelectedItem().getTo();
+        client.sendPostEvent(new Post(postUUID, timestamp, from, to, "Ce message a été supprimé."));
+        postVector.remove(postListView.getSelectionModel().getSelectedItem());
+        postsObservableList.remove(postListView.getSelectionModel().getSelectedItem());
+        postListView.refresh();
     }
 
     private void handleHostAdd(ActionEvent actionEvent) {
@@ -482,15 +543,21 @@ public class ChatController implements Initializable {
                 LOGGER.info("New message to contact!");
                 if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("to"))) {
                     LOGGER.info("New message! to:dm, from:" + content.getString("from"));
+                    postVector.remove(Post.fromJson(content));
+                    postsObservableList.remove(Post.fromJson(content));
                     postVector.add(Post.fromJson(content));
                     postsObservableList.add(Post.fromJson(content));
+
                     postListView.refresh();
                 }
                 if (contact.getLogin().equals(content.getString("to"))) {
                     if (contactsListView.getSelectionModel().getSelectedItem().getLogin().equals(content.getString("from"))) {
                         LOGGER.info("New message! to:dm, from:myself");
+                        postVector.remove(Post.fromJson(content));
+                        postsObservableList.remove(Post.fromJson(content));
                         postVector.add(Post.fromJson(content));
                         postsObservableList.add(Post.fromJson(content));
+
                         postListView.refresh();
 
                     } else {
@@ -505,8 +572,11 @@ public class ChatController implements Initializable {
                 LOGGER.info("New message to room!");
                 if (roomsListView.getSelectionModel().getSelectedItem().getRoomName().equals(content.getString("to"))) {
                     LOGGER.info("New message! to:room, from:myself");
+                    postVector.remove(Post.fromJson(content));
+                    postsObservableList.remove(Post.fromJson(content));
                     postVector.add(Post.fromJson(content));
                     postsObservableList.add(Post.fromJson(content));
+
                     postListView.refresh();
                 } else {
                     roomMap.get(content.getString("to")).getUnreadCount().incrementUnreadCount();
@@ -525,6 +595,15 @@ public class ChatController implements Initializable {
                 contactsListView.refresh();
                 LOGGER.info("New message to contact + nothing sel");
             }
+        } finally {
+            postListView.getItems().sort((o1,o2)->{
+                if(o1.equals(o2)) return 0;
+                if(o1.getTimestamp() > o2.getTimestamp())
+                    return 1;
+                else
+                    return 0;
+            });
+            postListView.refresh();
         }
     }
     private void handleContEvent(JSONObject content) {

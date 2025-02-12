@@ -158,7 +158,7 @@ public class ChatServer {
         return contactMap;
     }
 
-    /** Temporaire : connecte daisy pour test */
+    /** Temporaire : connecte   pour test */
     public static void daisyConnect() throws IOException {
         ChatClient client = new ChatClient("localhost", 2024, null);
         client.sendAuthEvent(new Contact("daisy", null));
@@ -282,10 +282,25 @@ public class ChatServer {
                 doCont(event.getContent());
                 LOGGER.info("Update de contact");
                 return true;
+            } else if (event.getType().equals(Event.POST)) {
+                doPost(event.getContent());
+                LOGGER.info("Post edited");
+                return true;
             } else {
                 LOGGER.warning("Unhandled event type: " + event.getType());
                 return false;
             }
+        }
+
+        private void doPost(JSONObject content) {
+            database = new DatabaseApi();
+            database.removePost(Post.fromJson(content));
+            database.addPost(Post.fromJson(content));
+            database.close();
+            postVector.removeIf(post -> post.getId().equals(Post.fromJson(content).getId()));
+            postVector.add(Post.fromJson(content));
+            sendEventToAllContacts(new Event(Event.POST, content));
+            LOGGER.info("didpost");
         }
 
         private void doCont(JSONObject content) {

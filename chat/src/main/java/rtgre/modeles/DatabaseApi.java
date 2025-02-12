@@ -90,6 +90,21 @@ public class DatabaseApi {
         }
     }
 
+    public boolean removePost(Post post) {
+        String query = "DELETE FROM posts WHERE id=?";
+        try {
+            PreparedStatement pstmt = con.prepareStatement(query);
+            pstmt.setString(1, post.getId().toString());
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            LOGGER.severe("Cannot remove post!");
+            System.out.println(e.getMessage());
+            e.printStackTrace();;
+            return false;
+        }
+    }
+
     public void close() {
         try {
             con.close();

@@ -6,6 +6,7 @@ import rtgre.chat.ChatController;
 import rtgre.modeles.Contact;
 import rtgre.modeles.Event;
 import rtgre.modeles.Message;
+import rtgre.modeles.Post;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -111,5 +112,10 @@ public class ChatClient extends ClientTCP {
 
     public void sendMessageEvent(Message msg) {
         sendEvent(new Event("MESG", msg.toJsonObject()));
+    }
+
+    public void sendPostEvent(Post selectedItem) {
+        Event postEvent = new Event(Event.POST, selectedItem.toJsonObject());
+        sendEvent(postEvent);
     }
 }
