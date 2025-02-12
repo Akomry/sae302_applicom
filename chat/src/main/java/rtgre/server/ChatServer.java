@@ -41,6 +41,11 @@ public class ChatServer {
 
 
     public static void main(String[] args) throws IOException {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         ChatServer server = new ChatServer(2024);
         //daisyConnect();
         server.acceptClients();

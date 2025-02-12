@@ -91,6 +91,7 @@ public class ChatController implements Initializable {
 
         try {
             InputStream in = ChatController.class.getResourceAsStream("config.properties");
+            System.out.println(ChatController.class.getResource("config.properties").getPath());
             properties.load(in);
             if (contact != null) {
                 this.contact.setAvatar(Contact.base64ToImage(properties.getProperty("avatar")));
@@ -241,6 +242,7 @@ public class ChatController implements Initializable {
                 }
                 properties.setProperty("avatar", Contact.imageToBase64(ImageIO.read(selectedFile)));
                 properties.store(new FileOutputStream(getClass().getResource("config.properties").getPath()), null);
+
             }
         } catch (IOException e) {
             LOGGER.warning("Impossible de lire l'image!");

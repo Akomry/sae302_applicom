@@ -25,7 +25,7 @@ public class ChatApplication extends Application {
             InputStream is = ChatApplication.class
                     .getResource("logging.properties").openStream();
             LogManager.getLogManager().readConfiguration(is);
-            if (!Files.exists(new File("chat/target/").toPath())) {
+            if (!Files.exists(new File("target/").toPath())) {
                 Files.createDirectory(new File("target").toPath());
             }
         } catch (Exception e) {
