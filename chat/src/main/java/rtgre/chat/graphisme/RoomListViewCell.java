@@ -1,24 +1,17 @@
 package rtgre.chat.graphisme;
 
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Pos;
 import javafx.scene.control.ListCell;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import rtgre.chat.ChatController;
-import rtgre.modeles.Contact;
 import rtgre.modeles.Room;
-
-import java.awt.image.BufferedImage;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
@@ -91,11 +84,7 @@ public class RoomListViewCell extends ListCell<Room> {
 
         StackPane stack = new StackPane();
         stack.getChildren().addAll(rectangle, new Text(room.abbreviation()));
-        /*
-        if (contact.getAvatar() != null) {
-            avatar = SwingFXUtils.toFXImage((BufferedImage) contact.getAvatar(), null);
-            view = new ImageView(avatar);
-        }*/
+
         HBox temp = new HBox(stack);
         temp.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(roomText, Priority.ALWAYS);

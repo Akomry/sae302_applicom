@@ -8,9 +8,7 @@ import rtgre.modeles.Event;
 import rtgre.modeles.Message;
 import rtgre.modeles.Post;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
 import static rtgre.chat.ChatApplication.LOGGER;

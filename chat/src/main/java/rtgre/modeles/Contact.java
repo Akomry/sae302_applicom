@@ -4,7 +4,6 @@ package rtgre.modeles;
 import org.json.JSONObject;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
