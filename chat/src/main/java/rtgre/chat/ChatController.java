@@ -219,9 +219,9 @@ public class ChatController implements Initializable {
         this.editMenuItem = new MenuItem();
         this.cancelMenuItem = new MenuItem();
 
-        removeMenuItem.setText("Remove message");
-        editMenuItem.setText("Edit message");
-        cancelMenuItem.setText("Cancel");
+        removeMenuItem.setText(i18nBundle.getString("contextRemove"));
+        editMenuItem.setText(i18nBundle.getString("contextEdit"));
+        cancelMenuItem.setText(i18nBundle.getString("contextCancel"));
 
         removeMenuItem.setOnAction(this::onMessageRemove);
         editMenuItem.setOnAction(this::onMessageEdit);
