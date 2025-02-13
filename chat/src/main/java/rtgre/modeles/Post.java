@@ -17,6 +17,24 @@ public class Post extends Message {
     /** Login du contact qui a envoyé ce post */
     protected String from;
 
+    /**
+     * Getter de `editable`
+     * @return Le post est-il éditable/supprimé ?
+     */
+    public boolean isEditable() {
+        return editable;
+    }
+
+    /**
+     * Setter de `editable`
+     * @param editable Le statut d'éditabilité du message
+     */
+    public void setEditable(boolean editable) {
+        this.editable = editable;
+    }
+
+    /** Post éditable ? */
+    protected boolean editable = true;
 
     /**
      * Constructeur par défaut
@@ -130,7 +148,8 @@ public class Post extends Message {
                 .put("timestamp", this.timestamp)
                 .put("from", this.from)
                 .put("to", this.to)
-                .put("body", this.body);
+                .put("body", this.body)
+                .put("editable", this.editable);
     }
 
     /**
@@ -148,12 +167,16 @@ public class Post extends Message {
      * @return Le post créé
      */
     public static Post fromJson(JSONObject jsonObject) {
-        return new Post(
+        Post post = new Post(
                 UUID.fromString(jsonObject.getString("id")),
                 jsonObject.getLong("timestamp"),
                 jsonObject.getString("from"),
                 jsonObject.getString("to"),
                 jsonObject.getString("body")
                 );
+        if (jsonObject.has("editable")) {
+            post.setEditable(jsonObject.getBoolean("editable"));
+        }
+        return post;
     }
 }

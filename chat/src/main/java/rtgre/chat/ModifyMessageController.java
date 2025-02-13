@@ -1,5 +1,6 @@
 package rtgre.chat;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -22,7 +23,24 @@ public class ModifyMessageController implements Initializable {
     public Button submitButton;
     /** Si la vue possède une valeur de retour */
     private Boolean ok;
+    /** Valeur de l'ancien post */
+    private String oldBody = "";
 
+    /**
+     * Getter de oldBody
+     * @return Renvoie le contenu de l'ancien Post
+     */
+    public String getOldBody() {
+        return oldBody;
+    }
+
+    /**
+     * Setter de oldBody
+     * @param oldBody le contenu de l'ancien post
+     */
+    public void setOldBody(String oldBody) {
+        this.oldBody = oldBody;
+    }
 
     /**
      * Initialisation du composant graphique
@@ -34,6 +52,7 @@ public class ModifyMessageController implements Initializable {
         resetButton.setOnAction(this::onActionReset);
         submitButton.setOnAction(this::onActionSubmit);
         hostTextField.setOnAction(this::onActionSubmit);
+        Platform.runLater(() -> hostTextField.setText(oldBody));
     }
 
     /**
@@ -42,7 +61,7 @@ public class ModifyMessageController implements Initializable {
      * @param actionEvent L'évènement associé au clic sur le bouton Reset
      */
     private void onActionReset(ActionEvent actionEvent) {
-        hostTextField.setText("");
+        hostTextField.setText(oldBody);
     }
 
     /**
