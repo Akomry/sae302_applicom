@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
@@ -169,6 +170,12 @@ public class ChatController implements Initializable {
         avatarImageView.setOnMouseClicked(this::handleAvatarChange);
         sendButton.setOnAction(this::onActionSend);
         messageTextField.setOnAction(this::onActionSend);
+        aboutMenuItem.setOnAction((ActionEvent) -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, i18nBundle.getString("welcomeText"));
+            alert.setTitle(i18nBundle.getString("welcomeTitle"));
+            alert.setHeaderText(null);
+            alert.show();
+        });
 
         initContextMenu();
         postListView.setOnContextMenuRequested(this::handleContextMenu);
