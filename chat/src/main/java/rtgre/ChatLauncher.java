@@ -3,6 +3,10 @@ package rtgre;
 import rtgre.chat.ChatApplication;
 import rtgre.server.ChatServer;
 
+import java.util.logging.Level;
+
+import static rtgre.chat.ChatApplication.LOGGER;
+
 
 /**
  * Application pour lancer soit ChatServer, soit ChatApplication
@@ -14,19 +18,19 @@ public class ChatLauncher {
      */
     public static void main(String[] args) {
         for (String arg : args) {
-            System.out.println(arg);
+            LOGGER.log(Level.FINEST, arg);
         }
         try {
             if ("server".equals(args[0])) {
-                System.out.println("test1");
+                LOGGER.log(Level.INFO, "Lancement du serveur...");
                 ChatServer.main(args);
             } else {
+                LOGGER.log(Level.INFO, "Lancement du client...");
                 ChatApplication.main(args);
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            System.out.println("test2");
+            LOGGER.log(Level.FINEST, e.getMessage(), e);
+            LOGGER.log(Level.INFO, "Lancement du client...");
             ChatApplication.main(args);
         }
 

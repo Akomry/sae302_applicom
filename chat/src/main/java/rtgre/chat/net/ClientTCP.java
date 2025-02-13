@@ -4,6 +4,8 @@ package rtgre.chat.net;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+
 import static rtgre.chat.ChatApplication.LOGGER;
 
 /**
@@ -70,7 +72,7 @@ public class ClientTCP {
      * @throws IOException si la connexion échoue ou si les flux ne sont pas récupérables
      */
     public ClientTCP(String host, int port) throws IOException {
-        System.out.printf("Connexion à [%s:%d]%n", host, port);
+        LOGGER.info("Connexion à [%s:%d]".formatted(host, port));
         sock = new Socket(host, port);
         ipPort = "%s:%d".formatted(sock.getLocalAddress().getHostAddress(), sock.getLocalPort());
         LOGGER.info("[%s] Connexion établie vers [%s:%d]".formatted(ipPort, host, port));
@@ -149,24 +151,24 @@ public class ClientTCP {
      * Boucle d'envoi de messages
      */
     public void sendLoop() {
-        System.out.println(BLUE + "Boucle d'envoi de messages..." + RST);
+        LOGGER.log(Level.FINE, BLUE + "Boucle d'envoi de messages..." + RST);
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         connected = true;
         try {
             while (connected) {
-                System.out.println(BLUE + "Votre message (\"fin\" pour terminer) : " + RST);
+                LOGGER.log(Level.FINE, BLUE + "Votre message (\"fin\" pour terminer) : " + RST);
                 String message = stdIn.readLine();
                 if (message == null) { // fin du flux stdIn
                     message = END_MESSAGE;
                 }
-                System.out.println(BLUE + "Envoi: " + message + RST);
+                LOGGER.log(Level.FINE, BLUE + "Envoi: " + message + RST);
                 this.send(message);
                 if (END_MESSAGE.equals(message)) {
                     connected = false;
                 }
             }
         } catch (IOException e) {
-            LOGGER.severe(e.toString());
+            LOGGER.log(Level.WARNING, e.getMessage(), e);
             connected = false;
         }
     }
@@ -175,12 +177,12 @@ public class ClientTCP {
      * Boucle de réception de messages
      */
     public void receiveLoop() {
-        System.out.println(RED + "Boucle de réception de messages..." + RST);
+        LOGGER.log(Level.FINE, RED + "Boucle de réception de messages..." + RST);
         connected = true;
         try {
             while (connected) {
                 String message = this.receive();
-                System.out.println(RED + "Réception: " + message + RST);
+                LOGGER.log(Level.FINE, RED + "Réception: " + message + RST);
             }
         } catch (IOException e) {
             LOGGER.severe("[%s] %s".formatted(ipPort, e));

@@ -443,11 +443,11 @@ public class ChatServer {
         private void doListPost(JSONObject content) throws JSONException, IllegalStateException {
             if (contactMap.getContact(user.getLogin()).isConnected()) {
                 if (!contactMap.containsKey(content.getString("select")) && !roomMap.containsKey(content.getString("select"))) {
-                    System.out.println("!select");
+                    LOGGER.log(Level.FINEST, "!select");
                     throw new IllegalStateException();
                 }
                 if (!content.getString("select").contains("#")) {
-                    System.out.println("!#");
+                    LOGGER.log(Level.FINEST, "!#");
                     for (Post post : postVector.getPostsSince(content.getLong("since"))) {
                         if (post.getTo().equals(content.getString("select")) ||
                                 post.getFrom().equals(content.getString("select"))) {
@@ -455,7 +455,7 @@ public class ChatServer {
                         }
                     }
                 } else if (user.getCurrentRoom().equals(content.getString("select"))) {
-                    System.out.println("#");
+                    LOGGER.log(Level.FINEST, "#");
                     for (Post post: postVector.getPostsSince(content.getLong("since"))) {
                         if (post.getTo().equals(content.getString("select"))) {
                             sendEventToContact(contactMap.getContact(user.getLogin()), new Event(Event.POST, post.toJsonObject()));
@@ -551,7 +551,7 @@ public class ChatServer {
                 LOGGER.info("Connexion de " + login);
                 contactMap.getContact(login).setConnected(true);
                 this.user = contactMap.getContact(login);
-                System.out.println(user.isConnected());
+                LOGGER.log(Level.FINEST, String.valueOf(user.isConnected()));
                 sendAllOtherClients(
                         findClient(contactMap.getContact(login)),
                         new Event("CONT", user.toJsonObject()).toJson()
