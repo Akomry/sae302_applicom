@@ -204,7 +204,8 @@ public class ChatController implements Initializable {
      * @param e L'évènement associé à un clic droit sur la PostListView
      */
     private void handleContextMenu(ContextMenuEvent e) {
-        if (postListView.getSelectionModel().getSelectedItem().getFrom().equals(contact.getLogin())) {
+        Post post = postListView.getSelectionModel().getSelectedItem();
+        if (post.getFrom().equals(contact.getLogin()) && post.isEditable()) {
             contextMenu.show(postListView, e.getScreenX(), e.getScreenY());
         }
     }
@@ -242,14 +243,18 @@ public class ChatController implements Initializable {
         String from = postListView.getSelectionModel().getSelectedItem().getFrom();
         String to = postListView.getSelectionModel().getSelectedItem().getTo();
         try {
-            ModifyMessageController controller = showNewStage(i18nBundle.getString("messageEdit"), "modifymessage-view.fxml");
-
-            Post post = new Post(postUUID, timestamp, from, to, controller.hostTextField.getText());
-            client.sendPostEvent(post);
-            postVector.remove(postListView.getSelectionModel().getSelectedItem());
-            postsObservableList.remove(postListView.getSelectionModel().getSelectedItem());
-            postListView.refresh();
-
+            ModifyMessageController controller = showModifyMessageStage(
+                    i18nBundle.getString("messageEdit"),
+                    "modifymessage-view.fxml",
+                    postListView.getSelectionModel().getSelectedItem().getBody()
+            );
+            if (controller.isOk()) {
+                Post post = new Post(postUUID, timestamp, from, to, controller.hostTextField.getText());
+                client.sendPostEvent(post);
+                postVector.remove(postListView.getSelectionModel().getSelectedItem());
+                postsObservableList.remove(postListView.getSelectionModel().getSelectedItem());
+                postListView.refresh();
+            }
         } catch (IOException e) {
             LOGGER.warning("Can't open modify message view!");
         }
@@ -266,7 +271,9 @@ public class ChatController implements Initializable {
         long timestamp = postListView.getSelectionModel().getSelectedItem().getTimestamp();
         String from = postListView.getSelectionModel().getSelectedItem().getFrom();
         String to = postListView.getSelectionModel().getSelectedItem().getTo();
-        client.sendPostEvent(new Post(postUUID, timestamp, from, to, "Ce message a été supprimé."));
+        Post post = new Post(postUUID, timestamp, from, to, "Ce message a été supprimé.");
+        post.setEditable(false);
+        client.sendPostEvent(post);
         postVector.remove(postListView.getSelectionModel().getSelectedItem());
         postsObservableList.remove(postListView.getSelectionModel().getSelectedItem());
         postListView.refresh();
@@ -311,6 +318,31 @@ public class ChatController implements Initializable {
         stage.showAndWait();
         return fxmlLoader.getController();
     }
+
+
+    /**
+     * Ouvre une fenêtre de modification de message et attend qu'elle se ferme.
+     *
+     * @param title titre de la fenêtre
+     * @param fxmlFileName nom du fichier FXML décrivant l'interface graphique
+     * @param parameter paramètre éventuel au format textuel
+     * @return l'objet contrôleur associé à la fenêtre
+     * @throws IOException si le fichier FXML n'est pas trouvé dans les ressources
+     */
+    public <T> T showModifyMessageStage(String title, String fxmlFileName, String parameter) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(ChatApplication.class.getResource(fxmlFileName), i18nBundle);
+        Scene scene = new Scene(fxmlLoader.load());
+        Stage stage = new Stage();
+        ModifyMessageController controller = fxmlLoader.getController();
+        controller.setOldBody(parameter);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(title);
+        stage.setResizable(false);
+        stage.setScene(scene);
+        stage.showAndWait();
+        return fxmlLoader.getController();
+    }
+
 
     /**
      * Initialise RoomListView avec sa CelFactory et sa liste observable

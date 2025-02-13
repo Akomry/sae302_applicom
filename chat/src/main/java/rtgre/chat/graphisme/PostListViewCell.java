@@ -97,6 +97,9 @@ public class PostListViewCell extends ListCell<Post> {
             tf.setBackground(Background.fill(Color.web("#FEE")));
             hBox.setAlignment(Pos.CENTER_LEFT);
         }
+        if (!post.isEditable()) {
+            tf.setBackground(Background.fill(Color.web("#808080")));
+        }
         setGraphic(hBox);
         getListView().scrollTo(getListView().getItems().size() - 1);
     }

@@ -43,7 +43,8 @@ public class DatabaseApi {
                     + "	`timestamp` long,"
                     + "	`from` text,"
                     + " `to` text,"
-                    + " `body` text"
+                    + " `body` text,"
+                    + " `connected` boolean"
                     + ");";
             stmt = con.createStatement();
             stmt.execute(sql);
@@ -105,7 +106,7 @@ public class DatabaseApi {
      * @return `true` si le post a bien été ajouté, `false` si une erreur est survenue
      */
     public boolean addPost(Post post) {
-        String query = "INSERT INTO posts VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO posts VALUES (?, ?, ?, ?, ?, ?)";
         try {
             PreparedStatement pstmt = con.prepareStatement(query);
             pstmt.setString(1, post.getId().toString());
@@ -113,6 +114,7 @@ public class DatabaseApi {
             pstmt.setString(3, post.getFrom());
             pstmt.setString(4, post.getTo());
             pstmt.setString(5, post.getBody());
+            pstmt.setBoolean(6, post.isEditable());
 
             pstmt.executeUpdate();
             return true;
