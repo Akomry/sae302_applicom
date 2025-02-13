@@ -10,16 +10,42 @@ import java.util.logging.LogManager;
 import static rtgre.chat.ChatApplication.LOGGER;
 
 /**
- * Client TCP: envoie des chaines de caractères à un serveur et lit les chaines en retour.
- * <p>
- * Serveur netcat à lancer en face : <code>nc -k -l -p 2024 -v</code>
+ * Client TCP : envoie des chaines de caractères à un serveur et lit les chaines en retour.
  */
 public class ClientTCP {
-
+    /** Couleur rouge */
     public static final String RED = "\u001b[31m";
+    /** Couleur bleue */
     public static final String BLUE = "\u001b[34m";
+    /** Couleur standard */
     public static final String RST = "\u001b[0m";
+    /** Fin de message */
     public static final String END_MESSAGE = "fin";
+
+    /**
+     * Socket connecté au serveur
+     */
+    protected Socket sock;
+
+    /**
+     * Flux de caractères UTF-8 en sortie
+     */
+    protected PrintStream out;
+
+    /**
+     * Flux de caractères UTF-8 en entrée
+     */
+    protected BufferedReader in;
+
+    /**
+     * Chaine de caractères "ip:port" du client
+     */
+    protected String ipPort;
+
+    /**
+     * Le client est-il connecté ?
+     */
+    protected boolean connected;
 
     /*
     static {
@@ -32,6 +58,11 @@ public class ClientTCP {
         }
     }*/
 
+    /**
+     * Programme principal [Déprécié]
+     * @param args Arguments
+     * @throws Exception Si la connexion échoue
+     */
     public static void main(String[] args) throws Exception {
         /*
         ClientTCP client = new ClientTCP("localhost", 2024);
@@ -56,34 +87,12 @@ public class ClientTCP {
     }
 
     /**
-     * Socket connecté au serveur
-     */
-    protected Socket sock;
-
-    /**
-     * Flux de caractères UTF-8 en sortie
-     */
-    protected PrintStream out;
-
-    /**
-     * Flux de caractères UTF-8 en entrée
-     */
-    protected BufferedReader in;
-
-    /**
-     * Chaine de caractères "ip:port" du client
-     */
-    protected String ipPort;
-
-    protected boolean connected;
-
-    /**
      * Le constructeur ouvre la connexion TCP au serveur <code>host:port</code>
      * et récupère les flux de caractères en entrée {@link #in} et sortie {@link #out}
      *import static rtgre.chat.ChatApplication.LOGGER;
      * @param host IP ou nom de domaine du serveur
      * @param port port d'écoute du serveur
-     * @throws IOException
+     * @throws IOException si la connexion échoue ou si les flux ne sont pas récupérables
      */
     public ClientTCP(String host, int port) throws IOException {
         System.out.printf("Connexion à [%s:%d]%n", host, port);
@@ -116,10 +125,18 @@ public class ClientTCP {
         }
     }
 
+    /**
+     * Getter de connected
+     * @return L'état de connected
+     */
     public boolean isConnected() {
         return connected;
     }
 
+    /**
+     * Setter de connected
+     * @param connected L'utilisateur est-il connecté ?
+     */
     public void setConnected(boolean connected) {
         this.connected = connected;
     }
@@ -153,6 +170,9 @@ public class ClientTCP {
     }
 
 
+    /**
+     * Boucle d'envoi de messages
+     */
     public void sendLoop() {
         System.out.println(BLUE + "Boucle d'envoi de messages..." + RST);
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
@@ -176,6 +196,9 @@ public class ClientTCP {
         }
     }
 
+    /**
+     * Boucle de réception de messages
+     */
     public void receiveLoop() {
         System.out.println(RED + "Boucle de réception de messages..." + RST);
         connected = true;

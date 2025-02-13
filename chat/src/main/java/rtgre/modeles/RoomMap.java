@@ -3,11 +3,21 @@ package rtgre.modeles;
 import java.util.HashSet;
 import java.util.TreeMap;
 
+/**
+ * Modélise un annuaire des salons sous la forme d’un tableau associatif clé=“#nom de salon” ⇒ valeur=“objet Room”.
+ */
 public class RoomMap extends TreeMap<String, Room> {
+    /**
+     * Ajoute un salon à l'annuaire des salons
+     * @param room Le salon à ajouter
+     */
     public void add(Room room) {
         this.put(room.getRoomName(), room);
     }
 
+    /**
+     * Charge 4 salons dans l'annuaire des salons : "`#all`", "`#juniors`", "`#ducks`", "`#mice`"
+     */
     public void loadDefaultRooms() {
         this.add(new Room("#all"));
         this.add(new Room("#juniors"));
@@ -15,6 +25,9 @@ public class RoomMap extends TreeMap<String, Room> {
         this.add(new Room("#mice"));
     }
 
+    /**
+     * Charge les listes des utilisateurs autorisés pour les 4 salons chargés au préalable
+     */
     public void setLoginSets() {
 
         HashSet<String> juniors = new HashSet<>();

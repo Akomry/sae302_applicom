@@ -8,10 +8,18 @@ import org.sqlite.JDBC;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
+/**
+ * Classe modélisant la connexion à la base de données des posts.
+ */
 public class DatabaseApi {
+    /** Connexion à la base de données */
     private Connection con;
+    /** Curseur "statement" à exécuter */
     private Statement stmt;
 
+    /**
+     * Constructeur par défaut : connecte la base de donnée et et créer un statement
+     */
     public DatabaseApi() {
         try {
             this.con = DriverManager.getConnection("jdbc:sqlite:target/dbase.db");
@@ -24,6 +32,10 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Crée la base de données si elle n'existe pas déjà
+     * @param con La connexion à la base de données
+     */
     private void initDB(Connection con) {
         try {
             String sql = "CREATE TABLE IF NOT EXISTS `posts` ("
@@ -42,6 +54,11 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Récupère un post selon son UUID
+     * @param uuid l'UUID du post
+     * @return Une liste de résultats contenant le Post
+     */
     public ResultSet getPostById(UUID uuid) {
         String query = "SELECT * FROM posts WHERE id = " + uuid.toString();
         try {
@@ -52,6 +69,11 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Récupère tous les posts dont le timestamp est supérieur à celui donné
+     * @param timestamp Le timestamp de comparaison
+     * @return Une liste de résultats contenant les posts, triés dans l'ordre chronologique
+     */
     public ResultSet getPostsSince(long timestamp) {
         String query = "SELECT * FROM posts WHERE timestamp >= " + timestamp + "ORDER BY timestamp DESC";
         try {
@@ -62,6 +84,10 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Récupère tous les posts de la base de données
+     * @return Une liste de résultats contenant tous les posts en base
+     */
     public ResultSet getPosts() {
         String query = "SELECT * FROM posts";
         try {
@@ -72,6 +98,11 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Ajoute un post dans la base
+     * @param post Le poste à ajouter
+     * @return `true` si le post a bien été ajouté, `false` si une erreur est survenue
+     */
     public boolean addPost(Post post) {
         String query = "INSERT INTO posts VALUES (?, ?, ?, ?, ?)";
         try {
@@ -90,6 +121,11 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Enlève un post de la base de données
+     * @param post Le post à retirer
+     * @return `true` si le post a bien été retiré, `false` si une erreur est survenue
+     */
     public boolean removePost(Post post) {
         String query = "DELETE FROM posts WHERE id=?";
         try {
@@ -105,6 +141,9 @@ public class DatabaseApi {
         }
     }
 
+    /**
+     * Ferme la connexion à la base de données
+     */
     public void close() {
         try {
             con.close();

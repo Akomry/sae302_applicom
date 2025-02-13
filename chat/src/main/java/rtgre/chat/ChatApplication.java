@@ -16,9 +16,15 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+/**
+ * Application graphique de chat
+ */
 public class ChatApplication extends Application {
+    /** Logger de l'application graphique */
     public static final Logger LOGGER = Logger.getLogger(ChatApplication.class.getCanonicalName());
+    /** Controller de l'application de chat */
     private ChatController controller;
+    /** Stage principal */
     private Stage stage;
     static {
         try {
@@ -33,6 +39,11 @@ public class ChatApplication extends Application {
         }
     }
 
+    /**
+     * Lancement de l'application
+     * @param stage La scène graphique
+     * @throws IOException En cas de problème d'accès aux ressources
+     */
     @Override
     public void start(Stage stage) throws IOException {
         ResourceBundle i18nBundle = ResourceBundle.getBundle("rtgre.chat.i18nBundle",
@@ -67,6 +78,9 @@ public class ChatApplication extends Application {
         }
     }
 
+    /**
+     * Fermeture de l'application
+     */
     @Override
     public void stop() {
         try {
@@ -86,6 +100,10 @@ public class ChatApplication extends Application {
         }
     }
 
+    /**
+     * Programme principal
+     * @param args Les arguments du programme principal
+     */
     public static void main(String[] args) {
         launch();
     }

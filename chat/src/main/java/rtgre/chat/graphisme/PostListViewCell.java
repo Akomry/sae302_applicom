@@ -15,11 +15,21 @@ import rtgre.modeles.Post;
 import java.awt.image.BufferedImage;
 import java.util.Date;
 
+/**
+ * Classe modélisant la fabrique de cellule de la vue des posts
+ * {@link ChatController#postListView}.
+ *
+ * @see ListCell
+ */
 public class PostListViewCell extends ListCell<Post> {
 
     /** Controller de l'application */
     ChatController controller;
 
+    /**
+     * Constructeur par défaut
+     * @param controller Le controller de l'application grapihque
+     */
     public PostListViewCell(ChatController controller) {
         this.controller = controller;
     }
@@ -28,7 +38,7 @@ public class PostListViewCell extends ListCell<Post> {
      * Callback déclenchée à chaque modification d'un objet d'une liste d'observable.
      *
      * @param post Le post
-     * @param empty      La liste de cellule doit-elle être complètement remise à zéro ?
+     * @param empty La liste de cellule doit-elle être complètement remise à zéro ?
      */
     @Override
     protected void updateItem(Post post, boolean empty) {
@@ -41,6 +51,11 @@ public class PostListViewCell extends ListCell<Post> {
         }
     }
 
+    /**
+     * Mise à jour de la cellule d'un post.
+     *
+     * @param post Le post à mettre à jour
+     */
     void updatePost(Post post) {
 
         Text datetimeText = new Text("\n%1$td/%1$tm/%1$tY %1$tH:%1$tM:%1$tS\n".formatted(new Date(post.getTimestamp())));

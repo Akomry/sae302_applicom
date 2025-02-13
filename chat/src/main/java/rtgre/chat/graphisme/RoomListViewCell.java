@@ -14,6 +14,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import rtgre.chat.ChatController;
 import rtgre.modeles.Contact;
 import rtgre.modeles.Room;
 
@@ -21,8 +22,20 @@ import java.awt.image.BufferedImage;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
+/**
+ * Classe modélisant la fabrique de cellule de la vue des salons
+ * {@link ChatController#roomsListView}.
+ *
+ * @see ListCell
+ */
 public class RoomListViewCell extends ListCell<Room> {
 
+    /**
+     * Callback déclenchée à chaque modification d'un objet d'une liste d'observable.
+     *
+     * @param room Le salon
+     * @param empty La liste de cellule doit-elle être complètement remise à zéro ?
+     */
     @Override
     protected void updateItem(Room room, boolean empty) {
         super.updateItem(room, empty);
@@ -36,6 +49,11 @@ public class RoomListViewCell extends ListCell<Room> {
     }
 
 
+    /**
+     * Couleur d'un salon, choisie parmi une banque de couleurs, en fonction d'un nom de salon.
+     * @param roomName Nom du salon
+     * @return La couleur associée à la première lettre du nom du salon
+     */
     public Color colorFromName(String roomName) {
         switch (roomName) {
             case "#all":
@@ -51,6 +69,11 @@ public class RoomListViewCell extends ListCell<Room> {
         }
     }
 
+    /**
+     * Mise à jour de la cellule d'un salon.
+     *
+     * @param room Le salon à mettre à jour
+     */
     private void updateRoom(Room room) {
         LOGGER.finest("Mise à jour de " + room);
 

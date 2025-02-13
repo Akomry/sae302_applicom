@@ -49,45 +49,84 @@ import java.util.regex.Pattern;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
+/**
+ * Controller de l'application de chat
+ *
+ */
 public class ChatController implements Initializable {
 
+    /** Pattern associé à une regex pour vérifier si le login est correct */
     private static final Pattern LOGIN_PATTERN = Pattern.compile("^([a-z][a-z0-9]{2,7})$");
-    private static final Pattern HOST_PATTERN = Pattern.compile("/^[a-z]*((\\:?)\\d{1,5})?$/gm");
+    /** Pattern associé à une regex pour récupérer le nom d'hôte et du port à partir d'un socket */
     private final Pattern hostPortPattern = Pattern.compile("^([-.a-zA-Z0-9]+)(?::([0-9]{1,5}))?$");
+    /** Menu `Add Host` */
     public MenuItem hostAddMenuItem;
+    /** Menu `Change avatar` */
     public MenuItem avatarMenuItem;
+    /** Menu `About` */
     public MenuItem aboutMenuItem;
+    /** Liste déroulante des serveurs disponibles */
     public ComboBox<String> hostComboBox;
+    /** Zone de saisie du login */
     public TextField loginTextField;
+    /** Bouton de connexion */
     public ToggleButton connectionButton;
+    /** ImageView de l'avatar */
     public ImageView avatarImageView;
+    /** Séparateur des messages/destainataires */
     public SplitPane exchangeSplitPane;
+    /** Vue des messages */
     public ListView<Post> postListView;
+    /** Vue des salons */
     public ListView<Room> roomsListView;
+    /** Vue des contacts */
     public ListView<Contact> contactsListView;
+    /** Zone de saisie du message */
     public TextField messageTextField;
+    /** Bouton d'envoi du message */
     public Button sendButton;
+    /** Statut */
     public Label statusLabel;
+    /** Horodatage */
     public Label dateTimeLabel;
+    /** Contact associé à l'utilisateur courant */
     public Contact contact;
+    /** Séparateur des salons/contacts */
     public SplitPane senderSplitPane;
+    /** Annuaire des contacts */
     private ContactMap contactMap = new ContactMap();
+    /** Liste observable associée aux contacts */
     private ObservableList<Contact> contactObservableList = FXCollections.observableArrayList();
+    /** Liste observable associée aux messages */
     private ObservableList<Post> postsObservableList = FXCollections.observableArrayList();
+    /** Instance de validateur permettant de vérifier la validité du login à partir du pattern LOGIN_PATTERN */
     private Validator validatorLogin = new Validator();
+    /** Client de connexion */
     private ChatClient client = null;
+    /** Liste des messages */
     private PostVector postVector;
+    /** Liste des salons */
     private RoomMap roomMap = new RoomMap();
+    /** Liste observable associée aux salons */
     private ObservableList<Room> roomObservableList = FXCollections.observableArrayList();
+    /** ResourceBundle contenant les textes en fonction des langues */
     private ResourceBundle i18nBundle;
+    /** Propriétés chargées à partir d'un fichier `config.properties` */
     private Properties properties = new Properties();
-    private Vector<String> hostlist;
+    /** Menu contextuel associé à un clic droit sur un message */
     private ContextMenu contextMenu = new ContextMenu();
+    /** Menu `removeItem` */
     private MenuItem removeMenuItem;
+    /** Menu `editMenuItem` */
     private MenuItem editMenuItem;
+    /** Menu `cancelMenuItem` */
     private MenuItem cancelMenuItem;
 
-
+    /**
+     * Initialisation du composant graphique
+     * @param url L'url
+     * @param resourceBundle Le ResourceBundle contenant les textes relatifs aux langues
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         LOGGER.info("Initialisation de l'interface graphique");
@@ -173,12 +212,21 @@ public class ChatController implements Initializable {
 
     }
 
+    /**
+     * Affiche le menu contextuel lors d'un clic droit sur un message dans la PostListView
+     *
+     * @param e L'évènement associé à un clic droit sur la PostListView
+     */
     private void handleContextMenu(ContextMenuEvent e) {
         if (postListView.getSelectionModel().getSelectedItem().getFrom().equals(contact.getLogin())) {
             contextMenu.show(postListView, e.getScreenX(), e.getScreenY());
         }
     }
 
+    /**
+     * Initialise le menu de contexte lors d'un clic droit sur un message dans la PostListView
+     *
+     */
     private void initContextMenu() {
         this.removeMenuItem = new MenuItem();
         this.editMenuItem = new MenuItem();
@@ -195,6 +243,13 @@ public class ChatController implements Initializable {
         contextMenu.getItems().addAll(removeMenuItem, editMenuItem, cancelMenuItem);
     }
 
+
+    /**
+     * Supprime le message sélectionné par le menu contextuel, affiche une vue de modification du message, puis envoie
+     * un événement POST associé au nouveau message.
+     * Conserve l'`UUID`, le `timestamp`, les champs `from` et `to`
+     * @param actionEvent L'évènement lié au bouton "Edit message" dans le menu
+     */
     private void onMessageEdit(ActionEvent actionEvent) {
         UUID postUUID = postListView.getSelectionModel().getSelectedItem().getId();
         long timestamp = postListView.getSelectionModel().getSelectedItem().getTimestamp();
@@ -214,6 +269,12 @@ public class ChatController implements Initializable {
         }
     }
 
+    /**
+     * Supprime le message sélectionné par le menu contextuel, et envoie un nouvel évènement POST associé au message
+     * de remplacement
+     * Conserve l'`UUID`, le `timestamp`, les champs `from` et `to`
+     * @param actionEvent L'évènement lié au bouton "Delete message" dans le menu
+     */
     private void onMessageRemove(ActionEvent actionEvent) {
         UUID postUUID = postListView.getSelectionModel().getSelectedItem().getId();
         long timestamp = postListView.getSelectionModel().getSelectedItem().getTimestamp();
@@ -225,6 +286,10 @@ public class ChatController implements Initializable {
         postListView.refresh();
     }
 
+    /**
+     * Ouvre une fenêtre de dialogue permettant d'ajouter un hôte à la liste des serveurs.
+     * @param actionEvent L'évènement lié au bouton "Add Host" dans le menu
+     */
     private void handleHostAdd(ActionEvent actionEvent) {
         try {
             ChatHostAddController controller = showNewStage(i18nBundle.getString("addHost"), "chathostadd-view.fxml");
@@ -260,6 +325,9 @@ public class ChatController implements Initializable {
         return fxmlLoader.getController();
     }
 
+    /**
+     * Initialise RoomListView avec sa CelFactory et sa liste observable
+     */
     private void initRoomListView() {
         try {
             roomsListView.setCellFactory(roomListView -> new RoomListViewCell());
@@ -269,6 +337,10 @@ public class ChatController implements Initializable {
         }
     }
 
+    /**
+     * Envoie au serveur un message à destination du contact sélectionné, contenant le texte du champ éditable des messages
+     * @param actionEvent L'évènement lié au bouton Send ou à l'appui sur `Entrée` dans le champ éditable des messages
+     */
     private void onActionSend(ActionEvent actionEvent) {
         String login = null;
         if (!(getSelectedContactLogin() == null)) {
@@ -284,10 +356,11 @@ public class ChatController implements Initializable {
         }
     }
 
+    /**
+     * Ouvre une fenêtre de dialogue permettant de choisir son avatar à partir d'un fichier image
+     * @param event L'évènement lié au clic sur l'avatar ou sur le bouton `"Change avatar"` dans le menu
+     */
     private void handleAvatarChange(Event event) {
-        /**
-         * Ouvre une fenêtre de dialogue permettant de choisir son avatar
-         */
         try {
             FileChooser fileChooser = new FileChooser();
             Stage stage = (Stage) avatarImageView.getScene().getWindow();
@@ -315,7 +388,10 @@ public class ChatController implements Initializable {
         }
     }
 
-
+    /**
+     * Connexion au serveur
+     * @param observable L'évènement lié au clic sur le bouton Connexion/Déconnexion
+     */
     private void handleConnection(Observable observable) {
         if (connectionButton.isSelected()) {
             java.awt.Image img = SwingFXUtils.fromFXImage(this.avatarImageView.getImage(), null);
@@ -367,6 +443,9 @@ public class ChatController implements Initializable {
         }
     }
 
+    /**
+     * Vide toutes les maps, les vecteurs et les listes observables.
+     */
     private void clearLists() {
         this.contactMap = new ContactMap();
         this.postVector = new PostVector();
@@ -376,6 +455,10 @@ public class ChatController implements Initializable {
         roomObservableList.clear();
     }
 
+    /**
+     * Vérifie si le login est conforme ou s'il n'est pas égal à `"system"`
+     * @param context Le contexte de vérification
+     */
     private void checkLogin(Check.Context context) {
         String login = context.get("login");
         if (!LOGIN_PATTERN.matcher(login).matches()) {
@@ -388,6 +471,11 @@ public class ChatController implements Initializable {
 
     }
 
+    /**
+     * Met à jour le label de statut situé en bas à gauche de l'application en fonction de si
+     * l'utilisateur est connecté à un serveur, et si oui, son login et le socket de connexion du serveur
+     * @param event L'évènement lié à l'interaction avec la HostComboBox
+     */
     private void statusNameUpdate(Event event) {
         statusLabel.setText("not connected to " + hostComboBox.getValue());
 
@@ -399,7 +487,10 @@ public class ChatController implements Initializable {
         }
     }
 
-
+    /**
+     * Gestion de l'horloge : affichage de la date courante toutes les secondes dans le label dateTimeLabel`
+     *
+     */
     private void dateTimeLoop() {
         while (true) {
             try {
@@ -413,6 +504,9 @@ public class ChatController implements Initializable {
 
     }
 
+    /**
+     * Initialise la CellFactory et la liste observable associée à la ContactListView
+     */
     private void initContactListView() {
         try {
             contactsListView.setCellFactory(contactListView -> new ContactListViewCell());
@@ -425,6 +519,10 @@ public class ChatController implements Initializable {
             LOGGER.severe(e.getMessage());
         }
     }
+
+    /**
+     * Initialise la CellFactory et la liste observable associée à la PostListView
+     */
     private void initPostListView() {
         try {
             postListView.setCellFactory(postListView -> new PostListViewCell(this));
@@ -434,7 +532,10 @@ public class ChatController implements Initializable {
         }
     }
 
-
+    /**
+     * Le contact sélectionné dans la ListView
+     * @return Le login associé au contact
+     */
     public String getSelectedContactLogin() {
         Contact contact;
         String login;
@@ -448,6 +549,10 @@ public class ChatController implements Initializable {
         return login;
     }
 
+    /**
+     * Le salon sélectionné dans la ListView
+     * @return Le nom du salon
+     */
     public String getSelectedRoomName() {
         Room room;
         String roomName;
@@ -461,14 +566,27 @@ public class ChatController implements Initializable {
         return roomName;
     }
 
+    /**
+     * Le contact utilisant l'application
+     *
+     * @return Le contact
+     */
     public Contact getContact() {
         return contact;
     }
 
+    /**
+     * Getter de l'annuaire des contacts
+     * @return L'annuaire des contacts
+     */
     public ContactMap getContactsMap() {
         return contactMap;
     }
 
+    /**
+     * Vide la vue des messages puis envoie un évènement JOIN et un évènement LSTP en fonction du salon sélectionné
+     * @param roomSelected Le salon sélectionné
+     */
     void handleRoomSelection(Room roomSelected) {
 
         if (roomSelected != null) {
@@ -491,6 +609,10 @@ public class ChatController implements Initializable {
         postListView.refresh();
     }
 
+    /**
+     * Vide la vue des messages puis envoie un évènement LSTP en fonction du contact sélectionné
+     * @param contactSelected Le contact sélectionné
+     */
     void handleContactSelection(Contact contactSelected) {
         if (contactSelected != null) {
             LOGGER.info("Clic sur " + contactSelected);
@@ -509,6 +631,11 @@ public class ChatController implements Initializable {
         postListView.refresh();
     }
 
+
+    /**
+     * Callback gérant les évènements réseaux reçus en provenance du serveur, en fonction du type de l'évènement
+     * @param event L'évènement reçu
+     */
     public void handleEvent(rtgre.modeles.Event event) {
         LOGGER.info("Received new event! : " + event);
         LOGGER.info(event.getType());
@@ -524,6 +651,10 @@ public class ChatController implements Initializable {
         }
     }
 
+    /**
+     * Traite les évènements de type "CONT" informant de l'état d'un contact
+     * @param content Le contenu d'un évènement `"CONT"`
+     */
     private void handleRoomEvent(JSONObject content) {
         LOGGER.info(content.toString());
         Room room = new Room(content.getString("room"));
@@ -532,6 +663,10 @@ public class ChatController implements Initializable {
         roomsListView.refresh();
     }
 
+    /**
+     * Traite la réception d'un post
+     * @param content Le contenu d'un évènement `"POST"`
+     */
     private void handlePostEvent(JSONObject content) {
 
         System.out.println("Selected: " + roomsListView.getSelectionModel().getSelectedItem());
@@ -606,6 +741,12 @@ public class ChatController implements Initializable {
             postListView.refresh();
         }
     }
+
+    /**
+     *
+     * Traite les évènements de type "CONT" informant de l'état d'un contact
+     * @param content Le contenu d'un évènement `"CONT"`
+     */
     private void handleContEvent(JSONObject content) {
         Contact contact = contactMap.getContact(content.getString("login"));
         java.awt.Image avatar = null;
