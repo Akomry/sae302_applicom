@@ -1,7 +1,5 @@
 package rtgre.modeles;
 
-import javax.xml.transform.Result;
-import java.io.File;
 import java.sql.*;
 import java.util.UUID;
 import org.sqlite.JDBC;

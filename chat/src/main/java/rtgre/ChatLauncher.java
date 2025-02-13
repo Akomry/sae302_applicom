@@ -3,7 +3,6 @@ package rtgre;
 import rtgre.chat.ChatApplication;
 import rtgre.server.ChatServer;
 
-import java.io.IOException;
 
 /**
  * Application pour lancer soit ChatServer, soit ChatApplication

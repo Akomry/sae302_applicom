@@ -1,6 +1,5 @@
 package rtgre.server;
 
-import javafx.scene.chart.PieChart;
 import org.json.JSONException;
 import org.json.JSONObject;
 import rtgre.chat.ChatController;
@@ -14,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 

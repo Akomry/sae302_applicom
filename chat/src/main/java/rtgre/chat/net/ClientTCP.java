@@ -1,12 +1,9 @@
 package rtgre.chat.net;
 
-import rtgre.chat.ChatController;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
 import static rtgre.chat.ChatApplication.LOGGER;
 
 /**
@@ -47,16 +44,6 @@ public class ClientTCP {
      */
     protected boolean connected;
 
-    /*
-    static {
-        try {
-            InputStream is = ClientTCP.class.getClassLoader()
-                    .getResource("rtgre/chat/logging.properties").openStream();
-            LogManager.getLogManager().readConfiguration(is);
-        } catch (Exception e) {
-            LOGGER.log(Level.INFO, "Cannot read configuration file", e);
-        }
-    }*/
 
     /**
      * Programme principal [Déprécié]
@@ -64,18 +51,6 @@ public class ClientTCP {
      * @throws Exception Si la connexion échoue
      */
     public static void main(String[] args) throws Exception {
-        /*
-        ClientTCP client = new ClientTCP("localhost", 2024);
-
-        // Essai simple d'émission / réception d'une chaine de caractères
-        String message = "Hello World!";
-        System.out.println(BLUE + "Envoi :" + message + RST);
-        client.send(message);
-        message = client.receive();
-        System.out.println(RED + "Réception: " + message + RST);
-
-        client.close();
-         */
 
         ClientTCP client = new ClientTCP("localhost", 2024);
         Thread envoi = new Thread(client::sendLoop);
