@@ -9,6 +9,7 @@ import rtgre.modeles.Message;
 import rtgre.modeles.Post;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static rtgre.chat.ChatApplication.LOGGER;
@@ -48,13 +49,13 @@ public class ChatClient extends ClientTCP {
             if (message == null) { // fin du flux stdIn
                 message = END_MESSAGE;
             }
-            System.out.println(BLUE + "Envoi: " + message + RST);
+            LOGGER.log(Level.FINE, BLUE + "Envoi: " + message + RST);
             this.send(message);
             if (END_MESSAGE.equals(message)) {
                 connected = false;
             }
         } catch (IOException e) {
-            LOGGER.severe(e.toString());
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             connected = false;
         }
     }
@@ -110,10 +111,10 @@ public class ChatClient extends ClientTCP {
         try {
             while (connected) {
                 String message = this.receive();
-                LOGGER.info(RED + "Réception: " + message + RST);
+                LOGGER.finest(RED + "Réception: " + message + RST);
                 LOGGER.info(RED + message + RST);
                 if (listener != null) {
-                    System.out.println(message);
+                    LOGGER.log(Level.FINE, message);
                     Platform.runLater(() -> listener.handleEvent(Event.fromJson(message)));
                 }
             }

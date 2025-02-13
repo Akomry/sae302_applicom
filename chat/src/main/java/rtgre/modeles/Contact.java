@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.logging.Level;
 
 import static rtgre.chat.ChatApplication.LOGGER;
 
@@ -201,7 +202,7 @@ public class Contact {
         try {
             this.avatar = avatarFromLogin(file, this.login);
         } catch (IOException e) {
-            System.out.println("Erreur : " + e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -230,7 +231,6 @@ public class Contact {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
             ImageIO.write(img, "png", bos);
-            System.out.println(Base64.getEncoder().encodeToString(bos.toByteArray()));
             return Base64.getEncoder().encodeToString(bos.toByteArray());
         } catch (IOException e) {
             LOGGER.severe("Impossible de convertir l'image en base64");

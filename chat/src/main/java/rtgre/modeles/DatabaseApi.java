@@ -2,6 +2,8 @@ package rtgre.modeles;
 
 import java.sql.*;
 import java.util.UUID;
+import java.util.logging.Level;
+
 import org.sqlite.JDBC;
 
 import static rtgre.chat.ChatApplication.LOGGER;
@@ -25,8 +27,8 @@ public class DatabaseApi {
             initDB(con);
             LOGGER.info("Database connected!");
             } catch (SQLException e) {
-            LOGGER.severe("Can't connect to database! \n" + e.getMessage());
-            e.printStackTrace();
+            LOGGER.severe("Can't connect to database! \n");
+            LOGGER.log(Level.FINE, e.getMessage(), e);
         }
     }
 
@@ -47,8 +49,7 @@ public class DatabaseApi {
             stmt.execute(sql);
         } catch (SQLException e) {
             LOGGER.severe("Cannot initialize database!");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            LOGGER.log(Level.FINE, e.getMessage(), e);
         }
     }
 
@@ -63,6 +64,7 @@ public class DatabaseApi {
             return stmt.executeQuery(query);
         } catch (SQLException e) {
             LOGGER.severe("Can't get post by id!");
+            LOGGER.log(Level.FINE, e.getMessage(), e);
             return null;
         }
     }
@@ -78,6 +80,7 @@ public class DatabaseApi {
             return stmt.executeQuery(query);
         } catch (SQLException e) {
             LOGGER.severe("Can't get post since " + timestamp + "!");
+            LOGGER.log(Level.FINE, e.getMessage(), e);
             return null;
         }
     }
@@ -133,8 +136,7 @@ public class DatabaseApi {
             return true;
         } catch (SQLException e) {
             LOGGER.severe("Cannot remove post!");
-            System.out.println(e.getMessage());
-            e.printStackTrace();;
+            LOGGER.log(Level.FINE, e.getMessage(), e);
             return false;
         }
     }
@@ -146,6 +148,7 @@ public class DatabaseApi {
         try {
             con.close();
         } catch (SQLException e) {
+            LOGGER.log(Level.FINE, e.getMessage(), e);
             LOGGER.severe("Can't close database connection! Is database connected ?");
         }
     }

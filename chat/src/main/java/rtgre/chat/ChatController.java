@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,7 +127,7 @@ public class ChatController implements Initializable {
 
         try {
             InputStream in = ChatController.class.getResourceAsStream("config.properties");
-            System.out.println(ChatController.class.getResource("config.properties").getPath());
+            LOGGER.finest("Chemin du fichier config.properties: " + ChatController.class.getResource("config.properties").getPath());
             properties.load(in);
             if (contact != null) {
                 this.contact.setAvatar(Contact.base64ToImage(properties.getProperty("avatar")));
@@ -145,14 +146,9 @@ public class ChatController implements Initializable {
                 exchangeSplitPane.setDividerPositions(Double.parseDouble(properties.getProperty("split2")));
             }
 
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             LOGGER.warning("Impossible de charger le fichier de configuration! Configuration par défaut chargée");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            LOGGER.warning("Impossible de charger le fichier de configuration! Configuration par défaut chargée");
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
         }
 
         Thread dateTimeLoop = new Thread(this::dateTimeLoop);
@@ -291,7 +287,8 @@ public class ChatController implements Initializable {
             }
         } catch (IOException e) {
             LOGGER.warning("Impossible d'ouvrir la fenêtre de dialogue: fxml introuvable \n" + e.getMessage());
-            e.printStackTrace();
+            LOGGER.log(Level.FINEST, e.getMessage(), e);
+
         }
     }
 
@@ -659,9 +656,9 @@ public class ChatController implements Initializable {
      */
     private void handlePostEvent(JSONObject content) {
 
-        System.out.println("Selected: " + roomsListView.getSelectionModel().getSelectedItem());
-        System.out.println("From: " + content.getString("from"));
-        System.out.println("To: " + content.getString("to"));
+        LOGGER.info("Selected: " + roomsListView.getSelectionModel().getSelectedItem());
+        LOGGER.info("From: " + content.getString("from"));
+        LOGGER.info("To: " + content.getString("to"));
 
         try {
             if (!content.getString("to").contains("#")) {
@@ -743,17 +740,17 @@ public class ChatController implements Initializable {
         if (!content.getString("avatar").isEmpty()) {
             avatar = Contact.base64ToImage(content.getString("avatar"));
         }
-        System.out.println(avatar);
         if (contact != null) {
             LOGGER.info(contactMap.toString());
             contactMap.getContact(content.getString("login")).setConnected(content.getBoolean("connected"));
             if (avatar != null) {
+                LOGGER.log(Level.FINEST, avatar.toString());
                 contactMap.getContact(content.getString("login")).setAvatar(avatar);
             }
             contactsListView.refresh();
             LOGGER.info(contactMap.toString());
         } else {
-            System.out.println(content);
+            LOGGER.log(Level.FINEST, content.toString());
             LOGGER.info(contactMap.toString());
             Contact user = Contact.fromJSON(
                     content,
